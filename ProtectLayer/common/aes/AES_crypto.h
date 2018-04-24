@@ -38,5 +38,14 @@ public:
     virtual uint8_t macSize();
 };
 
+class AEScipher { // TODO abstract class? 
+    AES *m_aes;
+
+public:
+    // no abstract class for cipher - not virtual yet
+    bool encrypt(const uint8_t *key, const uint8_t key_size /**/, const uint8_t *input, const uint16_t input_size, uint8_t *output, const uint8_t output_buffer_size);
+    uint8_t keySize();
+    uint8_t blockSize(); // TODO remove?
+};
 
 #endif //  AESCRYPTO_H
