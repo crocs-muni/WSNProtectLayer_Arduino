@@ -66,16 +66,8 @@ static void aes128_block(unsigned const char *key, unsigned const char* plainTex
     aes_enc_dec(ciphertext, key_copy, mode);
 }
 
-// static void aes128_block_encrypt(unsigned const char *key, unsigned const char* plainText, unsigned char *ciphertext) {
-//     aes128_block(key, plainText, ciphertext, AES_MODE_ENCRYPT);
-// }
-
 #define aes128_block_encrypt(key, plaintext, ciphertext) aes128_block(key, plaintext, ciphertext, AES_MODE_ENCRYPT)
 #define aes128_block_decrypt(key, plaintext, ciphertext) aes128_block(key, plaintext, ciphertext, AES_MODE_DECRYPT)
-
-// static void aes128_block_decrypt(unsigned const char *key, unsigned const char* plainText, unsigned char *ciphertext) {
-//     aes128_block(key, plainText, ciphertext, AES_MODE_DECRYPT);
-// }
 
 
 bool AES::encrypt(const uint8_t *in_block, uint8_t *expkey, uint8_t *out_block)

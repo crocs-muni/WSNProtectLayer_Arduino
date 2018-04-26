@@ -1,6 +1,6 @@
 #include "Crypto.h"
 
-#include <cstring>
+#include <string.h>
 
 
 Crypto::Crypto(Cipher *cipher, MAC *mac, Hash *hash, KeyDistrib *keydistrib):

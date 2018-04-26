@@ -12,15 +12,15 @@ CXX=g++ -std=c++11
 DEFINES=-DLINUX_ONLY
 endif
 
-INCDIRS=-I. -I.. -Iaes/
-LIBDIRS=-Laes/
+INCDIRS=-I. -I.. -IAES/
+LIBDIRS=-LAES/
 
-LIBAES=aes/libaes.a
+LIBAES=AES/libaes.a
 
 all: $(LIBAES) $(LIBNAME)
 
 $(LIBAES):
-	make -C aes
+	make -C AES
 
 %.o: %.cpp
 	$(CXX) -c $(INCDIRS) $(LIBDIRS) $(DEFINES) $< -o $@

@@ -21,8 +21,7 @@ ARDUINO_DIR       = /usr/share/arduino
 
 ### USER_LIB_PATH
 ### Path to where the your project's libraries are stored.
-#USER_LIB_PATH     :=  $(PROJECT_DIR)/lib
-USER_LIB_PATH     :=  ../common
+USER_LIB_PATH     :=  $(PROJECT_DIR)/lib
 
 ### BOARD_TAG
 ### It must be set to the board you are currently using. (i.e uno, mega2560, etc.)
@@ -48,7 +47,7 @@ CXXFLAGS_STD      = -ansi
 
 ### CPPFLAGS
 ### Flags you might want to set for debugging purpose. Comment to stop.
-CXXFLAGS         = -pedantic -Wall -Wextra
+CXXFLAGS         = -pedantic -Wall -Wextra -I../common/ -I../common/AES/
 
 ### If avr-gcc -v is higher than 4.9, activate coloring of the output
 ifeq "$(AVR_GCC_VERSION)" "1"

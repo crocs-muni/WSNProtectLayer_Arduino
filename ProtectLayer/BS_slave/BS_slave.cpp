@@ -2,7 +2,7 @@
 #include <EEPROM.h>
 #include <RF12.h>
 
-#include "../../common.h"
+#include "common.h"
 
 // #define RADIO_FREQ  RF12_868MHZ
 // #define RADIO_GROUP 10
@@ -17,8 +17,8 @@ uint8_t header = 0;
 void setup()
 {
     Serial.begin(BAUD_RATE);
-    Serial.println("\n===== uTESLA slave =====\n");
-    Serial.flush();
+    // Serial.println("\n===== BS slave =====\n");
+    // Serial.flush();
 
     header = createHeader(node_id, 0, 0);
 

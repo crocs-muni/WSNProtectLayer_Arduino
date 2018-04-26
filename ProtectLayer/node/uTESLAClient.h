@@ -6,7 +6,7 @@
 #include <EEPROM.h>
 #include <RF12.h>
 
-#include "../uTESLA.h"
+#include "uTESLA.h"
 // #include "AES_crypto.h"
 
 #define MAX_KEY_SIZE            32  // possible 256-bit output of hash function
@@ -16,29 +16,6 @@
 // #define AES_BLOCK_SIZE          16
 
 #define MAX_NUM_MISSED_ROUNDS   5
-
-// BLAKE 224 functions defined int blake224.c
-// void blake224_init( state224 *S );
-// void blake224_update( state224 *S, const uint8_t *in, uint64_t inlen );
-// void blake224_final( state224 *S, uint8_t *out );
-// void blake224_hash( uint8_t *out, const uint8_t *in, uint64_t inlen );
-// AES defined in TI_aes_128_encr_only.c
-// void aes_encrypt(unsigned char *state, unsigned char *key);
-
-// class Blake224: public Hash {
-// public:
-//     virtual bool hash(const uint8_t * const input, const uint16_t input_size, uint8_t *output, const uint16_t output_buufer_size);
-//     virtual uint8_t hashSize();
-// };
-
-// class BlakeHMAC: public MAC {
-// private:
-//     state224 m_blake_state; // TODO does not need to be an attribute
-// public:
-//     virtual bool computeMAC(const uint8_t *key, const uint8_t key_size, const uint8_t *input, const uint16_t input_size, uint8_t *output, const uint16_t output_buffer_size);
-//     virtual uint8_t keySize();
-//     virtual uint8_t macSize();
-// };
 
 class uTeslaClient {
 private:
