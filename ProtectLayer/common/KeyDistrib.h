@@ -6,7 +6,10 @@
 #include "AES.h"    // PL_key_t defined there for now
 
 class KeyDistrib {
+private:
+	PL_key_t m_key;
 public:
+	KeyDistrib(); // TODO! remove
 	/**
 		Command: Posts taks for key task_discoverKeys for key discovery
 		@return error_t status. SUCCESS or EALREADY if already pending

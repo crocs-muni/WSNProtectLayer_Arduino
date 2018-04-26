@@ -8,3 +8,5 @@ ProtectLayer/BS_host/WSNPL_BS
 *.a
 
 ProtectLayer/common/AES/aes\.code-workspace
+
+Configurator/host/config_host
