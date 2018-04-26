@@ -14,7 +14,7 @@
 
 void printBufferHex(const uint8_t *buffer, const uint32_t len)
 {
-    for(int i=0;i<len;i++){
+    for(uint32_t i=0;i<len;i++){
         printf("%02X ", buffer[i]);
     }
     printf("\n");
@@ -73,7 +73,7 @@ uTeslaMaster::uTeslaMaster(std::string &serial_port, const uint8_t *initial_key,
     std::cout << "Hash chain:" << std::endl;
 #endif
     // TODO remove useless hashes (too many)
-    for(int i=1;i<rounds_num + 1;i++){
+    for(uint32_t i=1;i<rounds_num + 1;i++){
         m_hash_chain[i] = new uint8_t[m_hash_size];
         if(!m_hash->hash(m_hash_chain[i-1], m_hash_size, m_hash_chain[i], m_hash_size)){
             // std::cerr << "Failed to initialize hash chain" << std::endl;
@@ -104,7 +104,7 @@ uTeslaMaster::uTeslaMaster(const int32_t device_fd, const uint8_t *initial_key, 
 #ifdef DEBUG
     std::cout << "Hash chain:" << std::endl;
 #endif
-    for(int i=1;i<rounds_num + 1;i++){
+    for(uint32_t i=1;i<rounds_num + 1;i++){
         m_hash_chain[i] = new uint8_t[m_hash_size];
         if(!m_hash->hash(m_hash_chain[i-1], m_hash_size, m_hash_chain[i], m_hash_size)){
             // std::cerr << "Failed to initialize hash chain" << std::endl;
@@ -120,7 +120,7 @@ uTeslaMaster::uTeslaMaster(const int32_t device_fd, const uint8_t *initial_key, 
 
 uTeslaMaster::~uTeslaMaster()
 {
-    for(int i=0;i<m_rounds_num + 1;i++){
+    for(uint32_t i=0;i<m_rounds_num + 1;i++){
         delete[] m_hash_chain[i];
     }
 }
@@ -135,7 +135,8 @@ bool uTeslaMaster::broadcastKey()
     // send it to arduino
     // maybe size twice first
     int32_t buffer_size = m_hash_size + 3;
-    uint8_t buffer[buffer_size];
+    // uint8_t buffer[buffer_size];
+    uint8_t *buffer = new uint8_t[buffer_size];
 
     buffer[0] = buffer_size - 2;
     buffer[1] = buffer_size - 2;
@@ -144,9 +145,11 @@ bool uTeslaMaster::broadcastKey()
     memcpy(buffer + 3, m_hash_chain[m_current_key_index], m_hash_size);
 
     if(write(m_dev_fd, buffer, buffer_size) < buffer_size){
+        delete[] buffer;
         return false;
     }
 
+    delete[] buffer;
     return true;
 }
 

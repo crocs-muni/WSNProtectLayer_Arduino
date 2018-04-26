@@ -7,7 +7,7 @@ DEFINES=-DLINUX_ONLY
 endif
 
 LIBNAME=libaes.a
-INCDIRS=-I. -I../uTESLA_AES/
+INCDIRS=-I. -I../uTESLA_AES/ -I..	
 LIBDIRS=
 
 all: $(LIBNAME)
