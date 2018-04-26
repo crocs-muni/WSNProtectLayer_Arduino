@@ -41,12 +41,14 @@ m_key_size(key_size)
         const std::string BS_name = "BS";
         generateKey(key, BS_name, random_file);
 
+        m_keys_num++;
+        m_keys.push_back(key);
 
         std::string device_name;
         while(getline(paths_file, device_name)){
-            // read line
-
-            Key key;
+            if(device_name.empty() || !(device_name.find_first_not_of(" \t") != std::string::npos)){
+                continue;
+            }
             generateKey(key, device_name, random_file);
             
             m_keys_num++;
