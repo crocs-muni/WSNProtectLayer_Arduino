@@ -7,7 +7,8 @@
 
 #include <stdint.h>
 
-struct Key {
+struct Node {
+    uint16_t ID;
     std::string device;
     std::vector<uint8_t> buffer;
 };
@@ -16,14 +17,18 @@ class Configurator {
 private:
     // int m_nodes_num;    // not including BS
     int m_key_size;
-    int m_keys_num;
-    std::vector<Key> m_keys;
+    int m_keys_num; // TODO rename to m_nodes_num
+    std::vector<Node> m_keys;
+    std::vector< std::vector< std::vector <uint8_t> > > m_pairwise_keys;
 
-    bool generateKey(Key &key, const std::string &device, std::ifstream &random_file);
+    bool generateBSKey(Node &node, const uint16_t ID, const std::string &device, std::ifstream &random_file);
+    bool generatePairwiseKeys(std::ifstream &random_file);
     bool readHeader(std::ifstream &input_file);
-    bool readKey(std::ifstream &input_file, Key &key);
+    bool readBSKey(std::ifstream &input_file, Node &key);
+    bool readPairwiseKeys(std::ifstream &input_file);
     bool writeHeader(std::ofstream &output_file);
-    bool writeKey(std::ofstream &output_file, const Key &key);
+    bool writeBSKey(std::ofstream &output_file, const Node &key);
+    bool writePairwiseKeys(std::ofstream &output_file);
     bool loadFromFile(const std::string filename);
 public:
     // generate
