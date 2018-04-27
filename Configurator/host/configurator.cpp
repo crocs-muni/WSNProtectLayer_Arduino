@@ -36,13 +36,14 @@ m_key_size(key_size)
             throw std::runtime_error("Failed to open /dev/urandom");
         } 
 
-        // BS
         Key key;
-        const std::string BS_name = "BS";
-        generateKey(key, BS_name, random_file);
+        
+        // BS
+        // const std::string BS_name = "BS";
+        // generateKey(key, BS_name, random_file);
 
-        m_keys_num++;
-        m_keys.push_back(key);
+        // m_keys_num++;
+        // m_keys.push_back(key);
 
         std::string device_name;
         while(getline(paths_file, device_name)){
@@ -59,7 +60,7 @@ m_key_size(key_size)
         random_file.close();
 
 
-        if((m_keys_num = m_keys.size()) < 2){
+        if((m_keys_num = m_keys.size()) < 1){
             throw std::runtime_error("No devices in config file");
         }
     } else {
