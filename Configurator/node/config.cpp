@@ -28,12 +28,12 @@ void setup()
 
 void saveNodeID(uint8_t node_id)
 {
-    eeprom_write_byte(0, node_id);
+    eeprom_update_byte(0, node_id);
 }
 
 void saveNodeKey(uint8_t *key, uint8_t node_id)
 {
-    eeprom_write_block(key, CONFIG_START_ADDRESS + (node_id * KEY_SIZE), KEY_SIZE);
+    eeprom_update_block(key, CONFIG_START_ADDRESS + (node_id * KEY_SIZE), KEY_SIZE);
 }
 
 #define saveBSKey(key)saveNodeKey(key, 0)
