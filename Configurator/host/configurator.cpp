@@ -206,6 +206,12 @@ bool Configurator::writeNode(std::ofstream &output_file, const Node &node)
 
 bool Configurator::writeuTESLAKeys(std::ofstream &output_file)
 {
+    output_file.write(reinterpret_cast<const char*>(&m_uTESLA_rounds), sizeof(m_uTESLA_rounds));
+    if(output_file.fail()){
+        std::cerr << "Failed to write number of uTESLA rounds" << std::endl;
+        return false;
+    }
+
     output_file.write(reinterpret_cast<const char*>(m_uTESLA_key), m_key_size);
     if(output_file.fail()){
         std::cerr << "Failed to write first uTESLA key" << std::endl;
@@ -248,6 +254,13 @@ bool Configurator::saveToFile(const std::string filename)
         output_file.close();
         return false;
     }
+    
+    if(!writeuTESLAKeys(output_file)){
+        std::cerr << "Failed to write pairwise keys" << std::endl;
+        output_file.close();
+        return false;
+    }
+    
 
     output_file.close();
 
@@ -311,6 +324,12 @@ bool Configurator::readNode(std::ifstream &input_file, Node &node)
 
 bool Configurator::readuTESLAKeys(std::ifstream &input_file)
 {
+    input_file.read(reinterpret_cast<char*>(&m_uTESLA_rounds), sizeof(m_uTESLA_rounds));
+    if(input_file.fail()){
+        std::cerr << "Failed to read number of uTESLA rounds" << std::endl;
+        return false;
+    }
+
     input_file.read(reinterpret_cast<char*>(m_uTESLA_key), m_key_size);
     if(input_file.fail()){
         std::cerr << "Failed to read first uTESLA key" << std::endl;
@@ -359,6 +378,12 @@ bool Configurator::loadFromFile(const std::string filename)
     }
 
     if(!readPairwiseKeys(input_file)){
+        std::cerr << "Failed to read pairwise keys" << std::endl;
+        input_file.close();
+        return false;
+    }
+
+    if(!readuTESLAKeys(input_file)){
         std::cerr << "Failed to read pairwise keys" << std::endl;
         input_file.close();
         return false;
@@ -748,4 +773,9 @@ const uint8_t* Configurator::getuTESLAKey()
 const uint8_t* Configurator::getuTESLALastElement()
 {
     return m_uTESLA_last_element;
+}
+
+int Configurator::getuTESLARounds()
+{
+    return m_uTESLA_rounds;
 }

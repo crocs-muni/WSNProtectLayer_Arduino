@@ -56,6 +56,7 @@ public:
     int getKeySize();
     const uint8_t *getuTESLAKey();
     const uint8_t *getuTESLALastElement();
+    int getuTESLARounds();
 };
 
 #endif //  CONFIGURATOR_H
