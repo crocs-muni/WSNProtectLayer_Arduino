@@ -1,21 +1,31 @@
 #include "configurator.h"
+#include "conf_common.h"
 
 #include <iostream>
 #include <sstream>
 #include <stdexcept>
+#include <thread>
+#include <chrono>
 
 #include <cstring>
+#include <cstdlib>
+#include <cstdio>
+#include <unistd.h>
+#include <termios.h>
+#include <fcntl.h>
+#include <errno.h>
 
-#define MAX_KEY_SIZE    128
+#define MAX_KEY_SIZE        64
+#define MAX_MESSAGE_LENGTH  256
 
-bool Configurator::generateBSKey(Node &node, const uint16_t ID, const std::string &device, std::ifstream &random_file)
+bool Configurator::generateBSKey(Node &node, const uint8_t ID, const std::string &device, std::ifstream &random_file)
 {
     uint8_t key_value[MAX_KEY_SIZE];
     node.ID = ID;
     node.device = device;
-    node.buffer.resize(m_key_size);
+    node.BS_key.resize(m_key_size);
     random_file.read(reinterpret_cast<char*>(key_value), m_key_size);
-    node.buffer.assign(key_value, key_value + m_key_size);
+    node.BS_key.assign(key_value, key_value + m_key_size);
 
     return true;
 }
@@ -24,11 +34,10 @@ bool Configurator::generatePairwiseKeys(std::ifstream &random_file)
 {
     uint8_t key_value[MAX_KEY_SIZE];
 
-    m_pairwise_keys.resize(m_keys_num);
+    m_pairwise_keys.resize(m_nodes_num);
 
-    for(int i=0;i<m_keys_num;i++){
+    for(int i=0;i<m_nodes_num;i++){
         for(int j=0;j<i;j++){
-            // std::cout << "Generating key for pair [" << i << "][" << j << "]" << std::endl;
             random_file.read(reinterpret_cast<char*>(key_value), m_key_size);
             if(random_file.fail()){
                 return false;
@@ -40,11 +49,30 @@ bool Configurator::generatePairwiseKeys(std::ifstream &random_file)
     return true;
 }
 
+bool Configurator::readID(std::string line, int *id)
+{
+    std::string delimiter = " \t";
+
+    size_t pos = 0;
+    if((pos = line.find_last_of(delimiter)) != std::string::npos) {
+        std::string str_id = line.substr(pos + 1);
+        try{
+            *id = std::stoi(str_id);
+        } catch(std::invalid_argument &ex){
+            return false;
+        }
+
+        return true;
+    }
+
+    return false;
+}
+
 Configurator::Configurator(std::string &in_filename, const int key_size):
 m_key_size(key_size)
 {
     if(key_size){
-        m_keys_num = 0;
+        m_nodes_num = 0;
 
         std::ifstream paths_file(in_filename.c_str(), std::ifstream::in);
 
@@ -60,26 +88,23 @@ m_key_size(key_size)
         } 
 
         Node node;
-        
-        // BS
-        // const std::string BS_name = "BS";
-        // generateKey(node, BS_name, random_file);
-
-        // m_keys_num++;
-        // m_keys.push_back(node);
-
         std::string device_name;
         while(getline(paths_file, device_name)){
             if(device_name.empty() || !(device_name.find_first_not_of(" \t") != std::string::npos)){
                 continue;
             }
+
+            int node_id = 0;
+            if(!readID(device_name, &node_id)){
+                throw std::runtime_error("Device ID not supplied for " + device_name);
+            }
             
-            if(!generateBSKey(node, m_keys_num + 1, device_name, random_file)){
+            if(!generateBSKey(node, node_id, device_name, random_file)){
                 throw std::runtime_error("Failed to generate BS key");
             }
             
-            m_keys_num++;
-            m_keys.push_back(node);
+            m_nodes_num++;
+            m_nodes.push_back(node);
         }
 
         if(!generatePairwiseKeys(random_file)){
@@ -90,7 +115,7 @@ m_key_size(key_size)
         random_file.close();
 
 
-        if((m_keys_num = m_keys.size()) < 1){
+        if((m_nodes_num = m_nodes.size()) < 1){
             throw std::runtime_error("No devices in config file");
         }
     } else {
@@ -100,11 +125,9 @@ m_key_size(key_size)
     }
 }
 
-
-
 bool Configurator::writeHeader(std::ofstream &output_file)
 {
-    output_file.write(reinterpret_cast<char*>(&m_keys_num), sizeof(m_keys_num));
+    output_file.write(reinterpret_cast<char*>(&m_nodes_num), sizeof(m_nodes_num));
     if(output_file.fail()){
         std::cerr << "Failed to write number of keys" << std::endl;
         return false;
@@ -120,7 +143,7 @@ bool Configurator::writeHeader(std::ofstream &output_file)
     return true;
 }
 
-bool Configurator::writeBSKey(std::ofstream &output_file, const Node &node)
+bool Configurator::writeNode(std::ofstream &output_file, const Node &node)
 {
     int dev_name_size = node.device.length() + 1;
     output_file.write(reinterpret_cast<char*>(&dev_name_size), sizeof(int));
@@ -135,7 +158,13 @@ bool Configurator::writeBSKey(std::ofstream &output_file, const Node &node)
         return false;
     }
 
-    output_file.write(reinterpret_cast<const char*>(node.buffer.data()), node.buffer.size());
+    output_file.write(reinterpret_cast<const char*>(&node.ID), sizeof(node.ID));
+    if(output_file.fail()){
+        std::cerr << "Failed to write node ID" << std::endl;
+        return false;
+    }
+
+    output_file.write(reinterpret_cast<const char*>(node.BS_key.data()), node.BS_key.size());
     if(output_file.fail()){
         std::cerr << "Failed to write node value" << std::endl;
         return false;
@@ -160,8 +189,8 @@ bool Configurator::saveToFile(const std::string filename)
         return false;
     }
 
-    for(std::vector<Node>::iterator it = m_keys.begin(); it != m_keys.end(); it++){
-        if(!writeBSKey(output_file, *it)){
+    for(std::vector<Node>::iterator it = m_nodes.begin(); it != m_nodes.end(); it++){
+        if(!writeNode(output_file, *it)){
             std::cerr << "Failed to write keys" << std::endl;
             output_file.close();
             return false;
@@ -181,7 +210,7 @@ bool Configurator::saveToFile(const std::string filename)
 
 bool Configurator::readHeader(std::ifstream &input_file)
 {
-    input_file.read(reinterpret_cast<char*>(&m_keys_num), sizeof(m_keys_num));
+    input_file.read(reinterpret_cast<char*>(&m_nodes_num), sizeof(m_nodes_num));
     if(input_file.fail()){
         std::cerr << "Failed to read number of keys" << std::endl;
         return false;
@@ -196,7 +225,7 @@ bool Configurator::readHeader(std::ifstream &input_file)
     return true;
 }
 
-bool Configurator::readBSKey(std::ifstream &input_file, Node &node)
+bool Configurator::readNode(std::ifstream &input_file, Node &node)
 {
     int dev_name_size = node.device.length() + 1;
     char device_name[256];  // TODO define for max device name length
@@ -215,6 +244,12 @@ bool Configurator::readBSKey(std::ifstream &input_file, Node &node)
     }
     node.device = device_name;
 
+    input_file.read(reinterpret_cast<char*>(&node.ID), sizeof(node.ID));
+    if(input_file.fail()){
+        std::cerr << "Failed to read node ID" << std::endl;
+        return false;
+    }
+
     // reusing device name buffer for node value
     memset(device_name, 0, 256);    // TODO use define for max device name length
     input_file.read(device_name, m_key_size);
@@ -223,7 +258,7 @@ bool Configurator::readBSKey(std::ifstream &input_file, Node &node)
         return false;
     }
 
-    node.buffer.assign(device_name, device_name + m_key_size);
+    node.BS_key.assign(device_name, device_name + m_key_size);
 
     return true;
 }
@@ -243,19 +278,19 @@ bool Configurator::loadFromFile(const std::string filename)
         return false;
     }
 
-    for(int i=0;i<m_keys_num;i++){
+    for(int i=0;i<m_nodes_num;i++){
         Node node;
 
-        if(!readBSKey(input_file, node)){
+        if(!readNode(input_file, node)){
             std::cerr << "Failed to read node " << i << std::endl;
             input_file.close();
             return false;
         }
 
-        m_keys.push_back(node);
+        m_nodes.push_back(node);
     }
 
-    if(static_cast<size_t>(m_keys_num) != m_keys.size()){
+    if(static_cast<size_t>(m_nodes_num) != m_nodes.size()){
         std::cerr << "File corrupted - not enough keys found" << std::endl;
         input_file.close();
         return false;
@@ -272,19 +307,13 @@ bool Configurator::loadFromFile(const std::string filename)
     return true;
 }
 
-bool Configurator::upload()
-{
-    return false;
-}
-
-
 bool Configurator::readPairwiseKeys(std::ifstream &input_file)
 {
     char key[MAX_KEY_SIZE];
 
-    m_pairwise_keys.resize(m_keys_num);
+    m_pairwise_keys.resize(m_nodes_num);
 
-    for(int i=0;i<m_keys_num;i++){
+    for(int i=0;i<m_nodes_num;i++){
         for(int j=0;j<i;j++){
             input_file.read(key, m_key_size);
             if(input_file.fail()){
@@ -300,9 +329,8 @@ bool Configurator::readPairwiseKeys(std::ifstream &input_file)
 
 bool Configurator::writePairwiseKeys(std::ofstream &output_file)
 {
-    for(int i=0;i<m_keys_num;i++){
+    for(int i=0;i<m_nodes_num;i++){
         for(int j=0;j<i;j++){
-            std::cout << "Writing key [" << i << "][" << j << "]" << std::endl; // TODO remove 
             output_file.write(reinterpret_cast<char*>(m_pairwise_keys[i][j].data()), m_key_size);
             if(output_file.fail()){
                 std::cerr << "Failed to write pairwise key" << std::endl;
@@ -313,5 +341,187 @@ bool Configurator::writePairwiseKeys(std::ofstream &output_file)
     
     output_file.flush();
     
+    return true;
+}
+
+
+void set_blocking (int fd, int should_block)
+{
+    struct termios tty;
+    memset (&tty, 0, sizeof tty);
+    if (tcgetattr (fd, &tty) != 0){
+            std::cerr << "error " << errno << " from tggetattr" << std::endl;
+            return;
+    }
+
+    tty.c_cc[VMIN]  = should_block ? 1 : 0;
+    tty.c_cc[VTIME] = 30;
+
+    if (tcsetattr (fd, TCSANOW, &tty) != 0){
+         std::cerr << "error " << errno << " setting term attributes" << std::endl;
+    }
+}
+
+int openSerialPort(std::string path)
+{
+    int serial_fd = open(path.c_str(), O_RDWR | O_NOCTTY | O_SYNC);
+    if (serial_fd < 0){
+        std::cerr << "Failed to open serial port " << path << ", errno: " << errno << std::endl;
+        return serial_fd;
+    }
+    set_blocking(serial_fd, 0); // set not blocking
+
+    return serial_fd;
+}
+
+bool checkResponse(int fd)
+{
+    uint8_t buffer[MAX_MESSAGE_LENGTH];
+    int rval;
+
+    if((rval = read(fd, buffer, MAX_MESSAGE_LENGTH)) < 0){
+        // TODO wait and try again
+
+        std::cerr << "Failed to receive response from the node" << std::endl;
+        return false;
+    }
+
+    if(rval != 1){
+        std::cout << "Receive more data than expected:" << std::endl;
+        for(int i=0;i<rval;i++){
+            printf("%02X ", buffer[i]);
+        }
+    }
+
+    if(buffer[0] == REPLY_OK || buffer[0] == REPLY_DONE){
+        return true;
+    } else {
+        switch(buffer[0]){
+            case REPLY_ERR_LEN:
+                std::cerr << "Wrong message length" << std::endl;
+                return false;
+            case REPLY_ERR_DONE:
+                std::cerr << "Configuration already done, node does not accept further data" << std::endl;
+                return false;
+            case REPLY_ERR_MSG_SIZE:
+                std::cerr << "Did not receive the whole message" << std::endl;
+                return false;
+            case REPLY_ERR_EEPROM:
+                std::cerr << "EEPROM failure" << std::endl;
+                return false;
+            case REPLY_ERR_MSG_TYPE:
+                std::cerr << "Wrong message type" << std::endl;
+                return false;
+            default:
+                std::cerr << "Unknown error" << std::endl;
+                return false;
+        }
+    }        
+}
+
+bool Configurator::uploadSingle(const Node &node, int node_index)   // TODO remove node, keep index
+{
+#ifdef DEBUG
+    std::cout << std::endl << "Configuring " << node.device << std::endl;
+#endif
+
+    int fd = openSerialPort(node.device);
+    if(fd < 0){
+        std::cerr << "Failed to open serial port " << node.device << std::endl;
+        return false;
+    }
+
+    uint8_t message_buffer[MAX_MESSAGE_LENGTH];
+    int rval;
+
+    // upload node ID
+    memset(message_buffer, 0, MAX_MESSAGE_LENGTH);
+    message_buffer[0] = MSG_TYPE_SIZE + sizeof(node.ID);
+    message_buffer[1] = message_buffer[0];
+    message_buffer[2] = MSG_ID;
+    memcpy(message_buffer + 3, &node.ID, sizeof(node.ID));
+    if((rval = write(fd, message_buffer, message_buffer[0] + 2)) != message_buffer[0] + 2){
+        std::cerr << "Failed to write ID to node " << node.device << std::endl;
+        if(rval > -1){
+            std::cerr << rval << " bytes were written" << std::endl;
+        }
+        close(fd);
+        return false;
+    }
+    tcdrain(fd);
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+
+    if(!checkResponse(fd)){
+        close(fd);
+        return false;
+    }
+
+    // upload BS key
+    memset(message_buffer, 0, MAX_MESSAGE_LENGTH);
+    message_buffer[0] = MSG_TYPE_SIZE + m_key_size;
+    message_buffer[1] = message_buffer[0];
+    message_buffer[2] = MSG_BS_KEY;
+    memcpy(message_buffer + 3, node.BS_key.data(), m_key_size);
+    if((rval = write(fd, message_buffer, message_buffer[0] + 2)) != message_buffer[0] + 2){
+        std::cerr << "Failed to write ID to node " << node.device << std::endl;
+        if(rval > -1){
+            std::cerr << rval << " bytes were written" << std::endl;
+        }
+        close(fd);
+        return false;
+    }
+    tcdrain(fd);
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+
+    if(!checkResponse(fd)){
+        close(fd);
+        return false;
+    }
+
+    // upload pairwise keys
+    memset(message_buffer, 0, MAX_MESSAGE_LENGTH);
+    message_buffer[0] = MSG_TYPE_SIZE + 1 /*node ID*/ + m_key_size;
+    message_buffer[1] = message_buffer[0];
+    message_buffer[2] = MSG_NODE_KEY;
+
+    for(int i=0;i<m_nodes_num;i++){
+        message_buffer[3] = m_nodes[i].ID;
+        if(node_index < i){
+            memcpy(message_buffer + 4, m_pairwise_keys[i][node_index].data(), m_key_size);
+        } else {
+            memcpy(message_buffer + 4, m_pairwise_keys[node_index][i].data(), m_key_size);
+        }
+
+        if((rval = write(fd, message_buffer, message_buffer[0] + 2)) != message_buffer[0] + 2){
+            std::cerr << "Failed to write ID to node " << node.device << std::endl;
+            if(rval > -1){
+                std::cerr << rval << " bytes were written" << std::endl;
+            }
+            close(fd);
+            return false;
+        }
+        tcdrain(fd);
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+
+        if(!checkResponse(fd)){
+            close(fd);
+            return false;
+        }
+    }
+
+    close(fd);
+
+    return true;
+}
+
+bool Configurator::upload()
+{
+    for(int i=0;i<m_nodes_num;i++){
+        if(!uploadSingle(m_nodes[i], i)){
+            std::cerr << "Failed to upload config for node " << m_nodes[i].device << std::endl;
+            return false;
+        }
+    }
+
     return true;
 }

@@ -27,7 +27,7 @@ int main(int argc, char **argv)
     bool    load        = false;    // TODO
     bool    upload      = false;    // TODO
 
-    while ((c = getopt (argc, argv, "g:k:l:s:h")) != -1){
+    while ((c = getopt (argc, argv, "g:k:l:s:uh")) != -1){
         switch (c){
         case 'g':
             generate = true;
@@ -43,6 +43,9 @@ int main(int argc, char **argv)
         case 's':
             save = true;
             out_filename = optarg;
+            break;
+        case 'u':
+            upload = true;
             break;
         case 'h':
         case '?':
@@ -75,20 +78,25 @@ int main(int argc, char **argv)
         exit(5);
     }
 
-    Configurator configurator(in_filename, key_size);
+    try{
+        Configurator configurator(in_filename, key_size);
 
-    if(save){
-        if(!configurator.saveToFile(out_filename)){
-            cerr << "Failed to save keys to file" << endl;
-            exit(7);
+        if(save){
+            if(!configurator.saveToFile(out_filename)){
+                cerr << "Failed to save keys to file" << endl;
+                exit(7);
+            }
         }
-    }
 
-    if(upload){
-        if(!configurator.upload()){
-            cerr << "Failed to upload configuration" << endl;
-            exit(10);
+        if(upload){
+            if(!configurator.upload()){
+                cerr << "Failed to upload configuration" << endl;
+                exit(10);
+            }
         }
+    } catch(exception &ex){
+        cerr << ex.what() << endl;
+        exit(20);
     }
 
     return 0;

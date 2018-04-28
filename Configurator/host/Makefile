@@ -9,11 +9,13 @@ DEFINES=-DLINUX_ONLY
 endif
 
 SRC_DIR=.
-INC_DIRS=
+INC_DIRS=-I../
 LIB_DIRS=
 LIBS=
 
-all:
+all: $(APP_NAME)
+
+$(APP_NAME):
 	$(CXX) $(DEFINES) $(INC_DIRS) $(LIB_DIRS) $(SRC_DIR)/*.cpp -o $(APP_NAME) $(LIBS)
 
 clean:

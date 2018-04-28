@@ -39,6 +39,8 @@ public:
 		@return error_t status.
 	*/
 	uint8_t getHashKeyB(PL_key_t** pHashKey);
+
+	uint8_t deleteKey(uint8_t nodeID); // TODO
 };
 
 

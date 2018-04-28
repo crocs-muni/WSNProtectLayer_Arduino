@@ -72,9 +72,9 @@
 
 // TODO! move elsewhere
 typedef struct _key {
-  uint8_t   keyType;
+//   uint8_t   keyType;
   uint8_t   keyValue[KEY_SIZE];
-  uint16_t  dbgKeyID;
+//   uint16_t  dbgKeyID;
   uint32_t  counter;
 } PL_key_t;
 
