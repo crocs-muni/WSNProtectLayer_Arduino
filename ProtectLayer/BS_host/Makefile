@@ -9,10 +9,10 @@ DEFINES=-DLINUX_ONLY
 endif
 
 SRC_DIR=.
-INC_DIRS=-I. -I../common -I../common/AES/
-LIB_DIRS=-L../common -L../common/AES/
+INC_DIRS=-I. -I../common -I../common/AES/ -I../../Configurator/host
+LIB_DIRS=-L../common -L../common/AES/ -L../../Configurator/host
 # LIBS=-luteslamaster -lblake224 -lutils
-LIBS=-lcommon -laes
+LIBS=-lcommon -laes -lconfigurator
 #OBJ_DIR=./obj
 
 all:

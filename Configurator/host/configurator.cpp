@@ -644,3 +644,13 @@ bool Configurator::upload()
 
     return true;
 }
+
+std::vector<Node> Configurator::getNodes()
+{
+    return m_nodes;
+}
+
+int Configurator::getKeySize()
+{
+    return m_key_size;
+}

@@ -10,6 +10,9 @@
 typedef uint16_t node_id_t;
 
 
+#define FAIL            1
+#define SUCCESS         0
+
 // radio settings
 #define BAUD_RATE           115200
 #define RADIO_FREQ          RF12_868MHZ

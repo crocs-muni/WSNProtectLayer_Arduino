@@ -37,10 +37,13 @@ public:
     // generate
     Configurator(std::string &in_filename, const int key_size);
     // load from file
-    Configurator(std::string &in_filename);
+    // Configurator(std::string &in_filename);
 
     bool saveToFile(const std::string filename);
     bool upload();
+
+    std::vector<Node> getNodes();
+    int getKeySize();
 };
 
 #endif //  CONFIGURATOR_H

@@ -6,11 +6,6 @@
 #define MSG_TYPE_DATA   3
 #define MSG_TYPE_KEY    4
 
-//typedef int8_t error_t; //TODO  defined in errno.h as int
-typedef int error_t; //TODO  defined in errno.h as int
-#define FAIL            1
-#define SUCCESS         0
-
 
 class Hash {
 public:

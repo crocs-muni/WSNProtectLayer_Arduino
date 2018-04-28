@@ -1,7 +1,16 @@
 #include "ProtectLayer.h"
 
-int main()
+#include <iostream>
+
+using namespace std;
+
+int main(int argc, char **argv)
 {
-    ProtectLayer protect_layer;
+    if(argc < 2){
+        cerr << "Please specify path to keyfile" << endl;
+    }
+
+
+    ProtectLayer protect_layer(string(argv[1]));
     return 0;
 }

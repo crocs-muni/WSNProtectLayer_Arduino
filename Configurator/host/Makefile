@@ -1,4 +1,5 @@
 APP_NAME=config_host
+LIB_NAME=libconfigurator.a
 
 ifdef DEBUG
 CXX=g++ -g -std=c++11 -pedantic -Wall -Wextra
@@ -13,10 +14,18 @@ INC_DIRS=-I../
 LIB_DIRS=
 LIBS=
 
-all: $(APP_NAME)
+OBJ=configurator.o
+
+all: $(OBJ) $(APP_NAME) $(LIB_NAME)
+
+$(OBJ):
+	$(CXX) -c $(DEFINES) $(INC_DIRS) configurator.cpp -o configurator.o
 
 $(APP_NAME):
-	$(CXX) $(DEFINES) $(INC_DIRS) $(LIB_DIRS) $(SRC_DIR)/*.cpp -o $(APP_NAME) $(LIBS)
+	$(CXX) $(DEFINES) $(INC_DIRS) $(LIB_DIRS) main.cpp $(OBJ) -o $(APP_NAME) $(LIBS)
+
+$(LIB_NAME):
+	ar rcs $(LIB_NAME) $(OBJ)
 
 clean:
 	rm -vf *.o
