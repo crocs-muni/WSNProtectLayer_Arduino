@@ -49,7 +49,8 @@ bool Configurator::generatePairwiseKeys(std::ifstream &random_file)
     return true;
 }
 
-bool Configurator::readID(std::string line, int *id)
+// also cuts the device name
+bool Configurator::readID(std::string &line, int *id)
 {
     std::string delimiter = " \t";
 
@@ -61,6 +62,7 @@ bool Configurator::readID(std::string line, int *id)
         } catch(std::invalid_argument &ex){
             return false;
         }
+        line = line.substr(0, pos);
 
         return true;
     }
@@ -344,6 +346,45 @@ bool Configurator::writePairwiseKeys(std::ofstream &output_file)
     return true;
 }
 
+// stolen from stackoverflow
+int set_interface_attribs (int fd, int speed, int parity)
+{
+    struct termios tty;
+    memset (&tty, 0, sizeof tty);
+    if (tcgetattr (fd, &tty) != 0)
+    {
+            std::cerr << "error " << errno << " from tcgetattr" << std::endl;
+            return -1;
+    }
+
+    cfsetospeed (&tty, speed);
+    cfsetispeed (&tty, speed);
+
+    tty.c_cflag = (tty.c_cflag & ~CSIZE) | CS8;     // 8-bit chars
+    // disable IGNBRK for mismatched speed tests; otherwise receive break
+    // as \000 chars
+    tty.c_iflag &= ~IGNBRK;         // disable break processing
+    tty.c_lflag = 0;                // no signaling chars, no echo,
+                                    // no canonical processing
+    tty.c_oflag = 0;                // no remapping, no delays
+    tty.c_cc[VMIN]  = 0;            // read doesn't block
+    tty.c_cc[VTIME] = 10;            // 0.5 seconds read timeout
+
+    tty.c_iflag &= ~(IXON | IXOFF | IXANY); // shut off xon/xoff ctrl
+
+    tty.c_cflag |= (CLOCAL | CREAD);// ignore modem controls,
+                                    // enable reading
+    tty.c_cflag &= ~(PARENB | PARODD);      // shut off parity
+    tty.c_cflag |= parity;
+    tty.c_cflag &= ~CSTOPB;
+    tty.c_cflag &= ~CRTSCTS;
+
+    if (tcsetattr (fd, TCSANOW, &tty) != 0){
+            std::cerr << "error " << errno << " from tcsetattr: " << std::endl;
+            return -1;
+    }
+    return 0;
+}
 
 void set_blocking (int fd, int should_block)
 {
@@ -369,6 +410,7 @@ int openSerialPort(std::string path)
         std::cerr << "Failed to open serial port " << path << ", errno: " << errno << std::endl;
         return serial_fd;
     }
+    // set_interface_attribs(serial_fd, B115200, 0);
     set_blocking(serial_fd, 0); // set not blocking
 
     return serial_fd;
@@ -379,18 +421,22 @@ bool checkResponse(int fd)
     uint8_t buffer[MAX_MESSAGE_LENGTH];
     int rval;
 
-    if((rval = read(fd, buffer, MAX_MESSAGE_LENGTH)) < 0){
-        // TODO wait and try again
-
-        std::cerr << "Failed to receive response from the node" << std::endl;
-        return false;
+    if((rval = read(fd, buffer, MAX_MESSAGE_LENGTH)) < 1){
+        // wait and try again
+        std::this_thread::sleep_for(std::chrono::milliseconds(300));
+        if((rval = read(fd, buffer, MAX_MESSAGE_LENGTH)) < 1){
+            std::cerr << "Failed to receive response from the node" << std::endl;
+            return false;
+        }
     }
 
     if(rval != 1){
-        std::cout << "Receive more data than expected:" << std::endl;
+        std::cout << "Received more data than expected (" << rval << "):" << std::endl;
         for(int i=0;i<rval;i++){
             printf("%02X ", buffer[i]);
         }
+        std::cout << std::endl;
+        std::cout.flush();
     }
 
     if(buffer[0] == REPLY_OK || buffer[0] == REPLY_DONE){
@@ -475,6 +521,8 @@ bool Configurator::uploadSingle(const Node &node, int node_index)   // TODO remo
     uint8_t message_buffer[MAX_MESSAGE_LENGTH];
     int rval;
 
+
+    read(fd, message_buffer, MAX_MESSAGE_LENGTH);
     // upload node ID
     memset(message_buffer, 0, MAX_MESSAGE_LENGTH);
     message_buffer[0] = MSG_TYPE_SIZE + sizeof(node.ID);
@@ -493,10 +541,13 @@ bool Configurator::uploadSingle(const Node &node, int node_index)   // TODO remo
     std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
     if(!checkResponse(fd)){
+        std::cerr << "Failed to configure ID for " << node.device << std::endl;
         close(fd);
         return false;
     }
 
+
+    read(fd, message_buffer, MAX_MESSAGE_LENGTH);
     // upload BS key
     memset(message_buffer, 0, MAX_MESSAGE_LENGTH);
     message_buffer[0] = MSG_TYPE_SIZE + m_key_size;
@@ -515,6 +566,7 @@ bool Configurator::uploadSingle(const Node &node, int node_index)   // TODO remo
     std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
     if(!checkResponse(fd)){
+        std::cerr << "Failed to configure BS key for " << node.device << std::endl;
         close(fd);
         return false;
     }
@@ -526,34 +578,53 @@ bool Configurator::uploadSingle(const Node &node, int node_index)   // TODO remo
     message_buffer[2] = MSG_NODE_KEY;
 
     for(int i=0;i<m_nodes_num;i++){
-        message_buffer[3] = m_nodes[i].ID;
-        if(node_index < i){
-            memcpy(message_buffer + 4, m_pairwise_keys[i][node_index].data(), m_key_size);
-        } else {
-            memcpy(message_buffer + 4, m_pairwise_keys[node_index][i].data(), m_key_size);
-        }
-
-        if((rval = write(fd, message_buffer, message_buffer[0] + 2)) != message_buffer[0] + 2){
-            std::cerr << "Failed to write ID to node " << node.device << std::endl;
-            if(rval > -1){
-                std::cerr << rval << " bytes were written" << std::endl;
+        // skip itself
+        if(i != node_index){
+            message_buffer[3] = m_nodes[i].ID;
+            if(node_index < i){
+    #ifdef DEBUG
+                std::cout << "key [" << i << "][" << node_index << "]" << std::endl;
+    #endif
+                memcpy(message_buffer + 4, m_pairwise_keys[i][node_index].data(), m_key_size);
+            } else {
+    #ifdef DEBUG
+                std::cout << "key [" << node_index << "][" << i << "]" << std::endl;
+    #endif
+                memcpy(message_buffer + 4, m_pairwise_keys[node_index][i].data(), m_key_size);
             }
-            close(fd);
-            return false;
-        }
-        tcdrain(fd);
-        std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
-        if(!checkResponse(fd)){
-            close(fd);
-            return false;
+            if((rval = write(fd, message_buffer, message_buffer[0] + 2)) != message_buffer[0] + 2){
+                std::cerr << "Failed to write ID to node " << node.device << std::endl;
+                if(rval > -1){
+                    std::cerr << rval << " bytes were written" << std::endl;
+                }
+                close(fd);
+                return false;
+            }
+            tcdrain(fd);
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+
+            if(!checkResponse(fd)){
+                std::cerr << "Failed to configure pairwise key for " << node.device << std::endl;
+                close(fd);
+                return false;
+            }
         }
     }
 
 #ifdef DEBUG
-    if(!requestKey(fd, m_nodes_num - 1)){
-        std::cerr << "Failed to read key that was set" << std::endl;
-        return false;
+    if(m_nodes_num > 1){
+        uint8_t req_key_node_index = m_nodes_num - 1;
+        if(node_index == req_key_node_index){
+            req_key_node_index--;
+        }
+        std::cout << "Requesting key for node " << (int) req_key_node_index << " from node "<< node_index << std::endl;
+        if(!requestKey(fd, m_nodes[req_key_node_index].ID)){
+            std::cerr << "Failed to read key that was set" << std::endl;
+            return false;
+        }
+    } else {
+        std::cout << "Not requesting key to verify because there is only 1 node" << std::endl;// TODO req BS key
     }
 #endif
 

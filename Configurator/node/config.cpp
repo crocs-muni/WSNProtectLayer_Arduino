@@ -8,6 +8,13 @@
 
 #define BUFFER_SIZE 64
 
+#define reply_ok            \
+    buffer[0] = REPLY_OK;   \
+    Serial.write(buffer, 1);\
+    Serial.flush();         \
+    return;
+
+
 uint8_t address    = 0;
 uint8_t value      = 0;
 String  line;
@@ -66,6 +73,7 @@ void loop()
                 return;
             }
             saveNodeID(buffer[1]);
+            reply_ok;
         } else if(buffer[0] == MSG_BS_KEY){
             if(len1 < KEY_SIZE + 1){
                 buffer[0] = REPLY_ERR_MSG_SIZE; // TODO maybe different error code
@@ -74,6 +82,7 @@ void loop()
                 return;
             }
             saveBSKey(buffer + 1);
+            reply_ok;
         } else if(buffer[0] == MSG_NODE_KEY){
             if(len1 < KEY_SIZE + 2){
                 buffer[0] = REPLY_ERR_MSG_SIZE; // TODO maybe different error code
@@ -82,6 +91,7 @@ void loop()
                 return;
             }
             saveNodeKey(buffer + 2, buffer[1]);
+            reply_ok;
         } else if(buffer[0] == MSG_REQ_KEY){
             if(len1 < 2){
                 buffer[0] = REPLY_ERR_MSG_SIZE; // TODO maybe different error code
@@ -97,11 +107,6 @@ void loop()
             Serial.flush();
             return;
         }
-
-        buffer[0] = REPLY_OK;
-        Serial.write(buffer, 1);
-        Serial.flush();
-        return;
 
         // TODO finalizing message => sleep
 

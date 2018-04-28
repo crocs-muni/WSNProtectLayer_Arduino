@@ -21,7 +21,7 @@ private:
     std::vector<Node> m_nodes;
     std::vector< std::vector< std::vector <uint8_t> > > m_pairwise_keys;
 
-    bool readID(std::string line, int *id);
+    bool readID(std::string &line, int *id);
     bool generateBSKey(Node &node, const uint8_t ID, const std::string &device, std::ifstream &random_file);
     bool generatePairwiseKeys(std::ifstream &random_file);
     bool readHeader(std::ifstream &input_file);
