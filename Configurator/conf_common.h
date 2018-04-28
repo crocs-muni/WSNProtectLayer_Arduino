@@ -6,6 +6,7 @@
 #define MSG_ID          0
 #define MSG_BS_KEY      1
 #define MSG_NODE_KEY    2
+#define MSG_REQ_KEY     3
 
 #define REPLY_OK                0
 #define REPLY_DONE              1

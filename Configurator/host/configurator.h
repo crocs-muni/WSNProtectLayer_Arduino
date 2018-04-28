@@ -32,6 +32,7 @@ private:
     bool writePairwiseKeys(std::ofstream &output_file);
     bool loadFromFile(const std::string filename);
     bool uploadSingle(const Node &node, int node_index);
+    bool requestKey(int fd, uint8_t node_id);
 public:
     // generate
     Configurator(std::string &in_filename, const int key_size);

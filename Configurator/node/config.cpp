@@ -31,6 +31,10 @@ void saveNodeKey(uint8_t *key, uint8_t node_id)
 
 #define saveBSKey(key)saveNodeKey(key, 0)
 
+void readNodeKey(uint8_t *key, uint8_t node_id)
+{
+    eeprom_read_block(key, CONFIG_START_ADDRESS + (node_id * KEY_SIZE), KEY_SIZE);
+}
 
 void loop()
 {
@@ -59,6 +63,7 @@ void loop()
                 buffer[0] = REPLY_ERR_MSG_SIZE; // TODO maybe different error code
                 Serial.write(buffer, 1);
                 Serial.flush();
+                return;
             }
             saveNodeID(buffer[1]);
         } else if(buffer[0] == MSG_BS_KEY){
@@ -66,6 +71,7 @@ void loop()
                 buffer[0] = REPLY_ERR_MSG_SIZE; // TODO maybe different error code
                 Serial.write(buffer, 1);
                 Serial.flush();
+                return;
             }
             saveBSKey(buffer + 1);
         } else if(buffer[0] == MSG_NODE_KEY){
@@ -73,13 +79,29 @@ void loop()
                 buffer[0] = REPLY_ERR_MSG_SIZE; // TODO maybe different error code
                 Serial.write(buffer, 1);
                 Serial.flush();
+                return;
             }
             saveNodeKey(buffer + 2, buffer[1]);
+        } else if(buffer[0] == MSG_REQ_KEY){
+            if(len1 < 2){
+                buffer[0] = REPLY_ERR_MSG_SIZE; // TODO maybe different error code
+                Serial.write(buffer, 1);
+                Serial.flush();
+                return;
+            }
+            readNodeKey(buffer, buffer[1]);
+            Serial.write(buffer, KEY_SIZE);
+        } else {
+            buffer[0] = REPLY_ERR_MSG_TYPE;
+            Serial.write(buffer, 1);
+            Serial.flush();
+            return;
         }
 
         buffer[0] = REPLY_OK;
         Serial.write(buffer, 1);
         Serial.flush();
+        return;
 
         // TODO finalizing message => sleep
 

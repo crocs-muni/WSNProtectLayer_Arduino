@@ -419,6 +419,47 @@ bool checkResponse(int fd)
     }        
 }
 
+// bool Configurator::requestKey(std::string device)
+// {
+//     // TODO open port
+//     // requestKey(fd);
+//     // TODO close port
+//     return true;
+// }
+
+bool Configurator::requestKey(int fd, uint8_t node_id)
+{
+    uint8_t buffer[32];
+
+    memset(buffer, 0, 32);
+    buffer[0] = 2;
+    buffer[1] = 2;
+    buffer[2] = MSG_REQ_KEY;
+    buffer[3] = node_id;
+
+    write(fd, buffer, 4);
+    tcdrain(fd);
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+
+    int rsplen = read(fd, buffer, 32);
+    if(rsplen < 0){
+        std::cerr << "Failed to read key" << std::endl;
+        return false;
+    }
+    if(rsplen < 16){
+        std::cerr << "Response too short (" << rsplen <<")" << std::endl;
+        return false;
+    }
+
+    for(int i=0;i<rsplen;i++){
+        printf("%02X ", buffer[i]);
+    }
+    std::cout << std::endl;
+    std::cout.flush();
+
+    return true;
+}
+
 bool Configurator::uploadSingle(const Node &node, int node_index)   // TODO remove node, keep index
 {
 #ifdef DEBUG
@@ -508,6 +549,13 @@ bool Configurator::uploadSingle(const Node &node, int node_index)   // TODO remo
             return false;
         }
     }
+
+#ifdef DEBUG
+    if(!requestKey(fd, m_nodes_num - 1)){
+        std::cerr << "Failed to read key that was set" << std::endl;
+        return false;
+    }
+#endif
 
     close(fd);
 
