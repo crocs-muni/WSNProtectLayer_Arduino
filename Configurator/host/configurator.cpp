@@ -1,6 +1,8 @@
 #include "configurator.h"
 #include "conf_common.h"
 
+#include "AES_crypto.h"
+
 #include <iostream>
 #include <sstream>
 #include <stdexcept>
@@ -15,7 +17,6 @@
 #include <fcntl.h>
 #include <errno.h>
 
-#define MAX_KEY_SIZE        64
 #define MAX_MESSAGE_LENGTH  256
 
 bool Configurator::generateBSKey(Node &node, const uint8_t ID, const std::string &device, std::ifstream &random_file)
@@ -49,6 +50,27 @@ bool Configurator::generatePairwiseKeys(std::ifstream &random_file)
     return true;
 }
 
+
+bool Configurator::generateuTESLAKeys(std::ifstream &random_file)
+{
+    AES aes;
+    AEShash hash(&aes);
+
+    uint8_t tmp_hash[MAX_KEY_SIZE];
+    random_file.read(reinterpret_cast<char*>(m_uTESLA_key), m_key_size);
+    memcpy(tmp_hash, m_uTESLA_key, m_key_size);
+
+    for(int i=1;i<m_uTESLA_rounds + 1;i++){
+        if(!hash.hash(tmp_hash, m_key_size, m_uTESLA_last_element, MAX_KEY_SIZE)){
+            std::cerr << "Failed to compute hash" << std::endl;
+            return false;
+        }
+        memcpy(tmp_hash, m_uTESLA_last_element, m_key_size);
+    }
+
+    return true;
+}
+
 // also cuts the device name
 bool Configurator::readID(std::string &line, int *id)
 {
@@ -70,8 +92,8 @@ bool Configurator::readID(std::string &line, int *id)
     return false;
 }
 
-Configurator::Configurator(std::string &in_filename, const int key_size):
-m_key_size(key_size)
+Configurator::Configurator(std::string &in_filename, const int uTESLA_rounds, const int key_size):
+m_key_size(key_size), m_uTESLA_rounds(uTESLA_rounds)
 {
     if(key_size){
         m_nodes_num = 0;
@@ -110,6 +132,10 @@ m_key_size(key_size)
         }
 
         if(!generatePairwiseKeys(random_file)){
+            throw std::runtime_error("Failed to generate random keys");
+        }
+
+        if(!generateuTESLAKeys(random_file)){
             throw std::runtime_error("Failed to generate random keys");
         }
 
@@ -173,6 +199,24 @@ bool Configurator::writeNode(std::ofstream &output_file, const Node &node)
     }
 
     output_file.flush();
+
+    return true;
+}
+
+
+bool Configurator::writeuTESLAKeys(std::ofstream &output_file)
+{
+    output_file.write(reinterpret_cast<const char*>(m_uTESLA_key), m_key_size);
+    if(output_file.fail()){
+        std::cerr << "Failed to write first uTESLA key" << std::endl;
+        return false;
+    }
+    
+    output_file.write(reinterpret_cast<const char*>(m_uTESLA_last_element), m_key_size);
+    if(output_file.fail()){
+        std::cerr << "Failed to write last uTESLA key" << std::endl;
+        return false;
+    }
 
     return true;
 }
@@ -265,6 +309,22 @@ bool Configurator::readNode(std::ifstream &input_file, Node &node)
     return true;
 }
 
+bool Configurator::readuTESLAKeys(std::ifstream &input_file)
+{
+    input_file.read(reinterpret_cast<char*>(m_uTESLA_key), m_key_size);
+    if(input_file.fail()){
+        std::cerr << "Failed to read first uTESLA key" << std::endl;
+        return false;
+    }
+
+    input_file.read(reinterpret_cast<char*>(m_uTESLA_key), m_key_size);
+    if(input_file.fail()){
+        std::cerr << "Failed to read last uTESLA key" << std::endl;
+        return false;
+    }
+
+    return true;
+}
 
 bool Configurator::loadFromFile(const std::string filename)
 {
@@ -346,6 +406,7 @@ bool Configurator::writePairwiseKeys(std::ofstream &output_file)
     return true;
 }
 
+
 // stolen from stackoverflow
 int set_interface_attribs (int fd, int speed, int parity)
 {
@@ -410,7 +471,7 @@ int openSerialPort(std::string path)
         std::cerr << "Failed to open serial port " << path << ", errno: " << errno << std::endl;
         return serial_fd;
     }
-    // set_interface_attribs(serial_fd, B115200, 0);
+    set_interface_attribs(serial_fd, B115200, 0);
     set_blocking(serial_fd, 0); // set not blocking
 
     return serial_fd;
@@ -555,7 +616,7 @@ bool Configurator::uploadSingle(const Node &node, int node_index)   // TODO remo
     message_buffer[2] = MSG_BS_KEY;
     memcpy(message_buffer + 3, node.BS_key.data(), m_key_size);
     if((rval = write(fd, message_buffer, message_buffer[0] + 2)) != message_buffer[0] + 2){
-        std::cerr << "Failed to write ID to node " << node.device << std::endl;
+        std::cerr << "Failed to write BS key to node " << node.device << std::endl;
         if(rval > -1){
             std::cerr << rval << " bytes were written" << std::endl;
         }
@@ -583,18 +644,18 @@ bool Configurator::uploadSingle(const Node &node, int node_index)   // TODO remo
             message_buffer[3] = m_nodes[i].ID;
             if(node_index < i){
     #ifdef DEBUG
-                std::cout << "key [" << i << "][" << node_index << "]" << std::endl;
+                std::cout << "Uploading key [" << i << "][" << node_index << "]" << std::endl;
     #endif
                 memcpy(message_buffer + 4, m_pairwise_keys[i][node_index].data(), m_key_size);
             } else {
     #ifdef DEBUG
-                std::cout << "key [" << node_index << "][" << i << "]" << std::endl;
+                std::cout << "Uploading key [" << node_index << "][" << i << "]" << std::endl;
     #endif
                 memcpy(message_buffer + 4, m_pairwise_keys[node_index][i].data(), m_key_size);
             }
 
             if((rval = write(fd, message_buffer, message_buffer[0] + 2)) != message_buffer[0] + 2){
-                std::cerr << "Failed to write ID to node " << node.device << std::endl;
+                std::cerr << "Failed to write pairwise key to node " << node.device << std::endl;
                 if(rval > -1){
                     std::cerr << rval << " bytes were written" << std::endl;
                 }
@@ -611,6 +672,29 @@ bool Configurator::uploadSingle(const Node &node, int node_index)   // TODO remo
             }
         }
     }
+
+    memset(message_buffer, 0, MAX_MESSAGE_LENGTH);
+    message_buffer[0] = MSG_TYPE_SIZE + m_key_size;
+    message_buffer[1] = message_buffer[0];
+    message_buffer[2] = MSG_UTESLA_KEY;
+    memcpy(message_buffer + 3, m_uTESLA_last_element, m_key_size);
+    if((rval = write(fd, message_buffer, message_buffer[0] + 2)) != message_buffer[0] + 2){
+        std::cerr << "Failed to write uTESLA key to node " << node.device << std::endl;
+        if(rval > -1){
+            std::cerr << rval << " bytes were written" << std::endl;
+        }
+        close(fd);
+        return false;
+    }
+    tcdrain(fd);
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+
+    if(!checkResponse(fd)){
+        std::cerr << "Failed to configure uTESLA key for " << node.device << std::endl;
+        close(fd);
+        return false;
+    }
+
 
 #ifdef DEBUG
     if(m_nodes_num > 1){
@@ -653,4 +737,15 @@ std::vector<Node> Configurator::getNodes()
 int Configurator::getKeySize()
 {
     return m_key_size;
+}
+
+
+const uint8_t* Configurator::getuTESLAKey()
+{
+    return m_uTESLA_key;
+}
+
+const uint8_t* Configurator::getuTESLALastElement()
+{
+    return m_uTESLA_last_element;
 }

@@ -5,6 +5,8 @@
 #include <cstdlib>
 #include <getopt.h>
 
+#define DEFAULT_UTESLA_ROUNDS_NUM   100
+
 using namespace std;
 
 void printHelp(const char *appname)
@@ -26,8 +28,9 @@ int main(int argc, char **argv)
     bool    save        = false;    // TODO
     bool    load        = false;    // TODO
     bool    upload      = false;    // TODO
+    int     uTESLA_rnds = 0;
 
-    while ((c = getopt (argc, argv, "g:k:l:s:uh")) != -1){
+    while ((c = getopt (argc, argv, "g:k:l:s:ur:h")) != -1){
         switch (c){
         case 'g':
             generate = true;
@@ -46,6 +49,9 @@ int main(int argc, char **argv)
             break;
         case 'u':
             upload = true;
+            break;
+        case 'r':
+            uTESLA_rnds = atoi(optarg);
             break;
         case 'h':
         case '?':
@@ -78,8 +84,12 @@ int main(int argc, char **argv)
         exit(5);
     }
 
+    if(!uTESLA_rnds){
+        uTESLA_rnds = DEFAULT_UTESLA_ROUNDS_NUM;
+    }
+
     try{
-        Configurator configurator(in_filename, key_size);
+        Configurator configurator(in_filename, uTESLA_rnds, key_size);
 
         if(save){
             if(!configurator.saveToFile(out_filename)){

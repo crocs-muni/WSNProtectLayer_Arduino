@@ -38,6 +38,12 @@ void saveNodeKey(uint8_t *key, uint8_t node_id)
 
 #define saveBSKey(key)saveNodeKey(key, 0)
 
+void saveuTESLAKey(uint8_t *key)
+{
+    eeprom_update_block(key, UTESLA_KEY_ADDRESS, KEY_SIZE);
+}
+
+
 void readNodeKey(uint8_t *key, uint8_t node_id)
 {
     eeprom_read_block(key, CONFIG_START_ADDRESS + (node_id * KEY_SIZE), KEY_SIZE);
@@ -101,6 +107,15 @@ void loop()
             }
             readNodeKey(buffer, buffer[1]);
             Serial.write(buffer, KEY_SIZE);
+        } else if(buffer[0] == MSG_UTESLA_KEY){
+            if(len1 < KEY_SIZE + 1){
+                buffer[0] = REPLY_ERR_MSG_SIZE; // TODO maybe different error code
+                Serial.write(buffer, 1);
+                Serial.flush();
+                return;
+            }
+            saveuTESLAKey(buffer + 1);
+            reply_ok;
         } else {
             buffer[0] = REPLY_ERR_MSG_TYPE;
             Serial.write(buffer, 1);

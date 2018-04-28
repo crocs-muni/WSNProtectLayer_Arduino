@@ -10,7 +10,6 @@
 
 
 #define CONFIG_START_ADDRESS    (uint8_t*)0x40
-
-#define KEY_STRUCT_SIZE         sizeof(PL_key_t)
+#define UTESLA_KEY_ADDRESS      (uint8_t*)0x14F
 
 #endif //  ADDRESSES_H

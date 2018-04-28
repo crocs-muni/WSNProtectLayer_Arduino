@@ -10,9 +10,9 @@ DEFINES=-DLINUX_ONLY
 endif
 
 SRC_DIR=.
-INC_DIRS=-I../
-LIB_DIRS=
-LIBS=
+INC_DIRS=-I../ -I../../ProtectLayer/common/AES/ -I../../ProtectLayer/common/
+LIB_DIRS=-L../ProtectLayer/common/AES -L../../ProtectLayer/common/AES
+LIBS=-laes
 
 OBJ=configurator.o
 
