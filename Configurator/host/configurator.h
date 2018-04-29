@@ -7,8 +7,9 @@
 
 #include <stdint.h>
 
-
+#ifndef MAX_KEY_SIZE
 #define MAX_KEY_SIZE        64
+#endif
 
 
 struct Node {

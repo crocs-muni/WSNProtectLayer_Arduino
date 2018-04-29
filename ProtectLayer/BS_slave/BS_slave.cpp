@@ -33,23 +33,27 @@ void loop()
         while(Serial.available() < 1);
         uint8_t len2 = Serial.read();
         if(len1 != len2){
-            Serial.print("Incorrect length byte: ");
-            Serial.println(len2);
-            Serial.flush();
+            // Serial.print("Incorrect length byte: ");
+            // Serial.println(len2);
+            printError(ERR_MSG_SIZE);
+            // Serial.flush();
             return;
         }
 
         while(Serial.available() < 1);
         if(Serial.readBytes(buffer, len1) != len1){
-            Serial.println("Failed to receive whole packet from serial port");
-            Serial.flush();
+            // Serial.println("Failed to receive whole packet from serial port");
+            printError(ERR_SERIAL_RD);
+            // Serial.flush();
             return;
         }
 
-        Serial.println("Sending: ");
-        printBuffer(buffer, len1);
-        Serial.flush();
+        // Serial.println("Sending: ");
+        // printBuffer(buffer, len1);
+        // Serial.flush();
 
         rf12_sendNow(header, buffer, len1);
+
+        printError(ERR_OK);
     }
 }

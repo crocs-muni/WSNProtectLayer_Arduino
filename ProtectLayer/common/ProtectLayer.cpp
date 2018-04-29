@@ -1,7 +1,18 @@
 #include "ProtectLayer.h"
-#include "configurator.h"
+
+
+// #undef __linux__
 
 #ifdef __linux__
+#include "configurator.h"
+
+#include <termios.h>
+#include <cstring>
+#include <iostream>
+#include <fcntl.h>
+#include <unistd.h>
+
+
 // TODO! duplicate serial port opening - same code in configurator
 // stolen from stackoverflow
 int set_interface_attribs (int fd, int speed, int parity)
@@ -91,18 +102,70 @@ ProtectLayer::~ProtectLayer()
     delete m_utesla;
     close(m_slave_fd);
 }
+
+
+uint8_t ProtectLayer::startCTP()
+{
+    m_ctp.startCTP(CTP_DURATION_MS);
+}
+
+uint8_t ProtectLayer::send(msg_type_t msg_type, uint8_t *buffer, uint8_t size)
+{
+
+}
+
+uint8_t ProtectLayer::receive(uint8_t *buffer, uint8_t buff_size)
+{
+    if(read(m_slave_fd, buffer, buff_size) < 1){
+        return FAIL;
+    }
+
+    // TODO! unprotect buffer
+
+    return SUCCESS;
+}
+
+
 #else
+#include "RF12.h"
+#include <avr/eeprom.h>
 
 #ifdef ENABLE_UTESLA
+// initialize also uTESLA
 ProtectLayer::ProtectLayer():
-m_hash(&m_aes), m_mac(&m_aes), m_crypto(&m_aes, &m_mac, &m_hash, &m_keydistrib), m_utesla(, &m_hash, &m_mac)
-/*    uTeslaClient(int16_t eeprom_address, Hash *hash, MAC *mac);
-    uTeslaClient(const uint8_t* initial_key, Hash *hash, MAC *mac);*/
+m_hash(&m_aes), m_mac(&m_aes), m_crypto(&m_aes, &m_mac, &m_hash, &m_keydistrib), m_utesla((int16_t) 0x1F4, &m_hash, &m_mac)
 #else
+// do not initialize uTESLA
 ProtectLayer::ProtectLayer():
 m_hash(&m_aes), m_mac(&m_aes), m_crypto(&m_aes, &m_mac, &m_hash, &m_keydistrib)
 #endif
 {
-    
+    Serial.begin(BAUD_RATE);
+
+    m_node_id == eeprom_read_byte(0);
+    m_ctp.setNodeID(m_node_id);
+
+    rf12_initialize(m_node_id, RADIO_FREQ, RADIO_GROUP);
 }
+
+
+uint8_t ProtectLayer::startCTP()
+{
+    m_ctp.startCTP(CTP_DURATION_MS);
+}
+
+uint8_t ProtectLayer::send(msg_type_t msg_type, uint8_t *buffer, uint8_t size)
+{
+    // // TODO! fill m_msg_buffer
+
+    // m_ctp.send(m_msg_buffer, )
+}
+
+uint8_t ProtectLayer::receive(uint8_t *buffer, uint8_t buff_size)
+{
+    // TODO!
+}
+
+
 #endif
+

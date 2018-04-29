@@ -11,7 +11,9 @@
 //#include "AES_crypto.h"
 #include "uTESLA.h"
 
+#ifndef MAX_KEY_SIZE
 #define MAX_KEY_SIZE            32  // possible 256-bit output of hash function
+#endif
 #define AES_KEY_SIZE            16
 #define AES_BLOCK_SIZE          16
 #define BLAKE_HASH_SIZE         28

@@ -12,7 +12,7 @@ CXX=g++ -std=c++11
 DEFINES=-DLINUX_ONLY
 endif
 
-INCDIRS=-I. -I.. -IAES/ -I../../Configurator/host -I../BS_host
+INCDIRS=-I. -I../ -I../../ -IAES/ -I../../Configurator/host -I../BS_host
 LIBDIRS=-LAES/ -L../../Configurator/host
 
 LIBAES=AES/libaes.a

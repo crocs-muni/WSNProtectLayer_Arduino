@@ -43,11 +43,11 @@ AVRDDUDE          = /usr/bin/avrdude
 CFLAGS_STD        = -std=c99
 
 ### CXXFLAGS_STD
-CXXFLAGS_STD      = -ansi
+CXXFLAGS_STD      =# -ansi
 
 ### CPPFLAGS
 ### Flags you might want to set for debugging purpose. Comment to stop.
-CXXFLAGS         = -pedantic -Wall -Wextra -I../common/ -I../common/AES/
+CXXFLAGS         = -pedantic -Wall -Wextra  -I. -I../../ -I../common/ -I../common/AES/
 
 ### If avr-gcc -v is higher than 4.9, activate coloring of the output
 ifeq "$(AVR_GCC_VERSION)" "1"

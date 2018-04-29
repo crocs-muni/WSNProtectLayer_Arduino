@@ -2,6 +2,8 @@
 #include <EEPROM.h>
 #include <avr/sleep.h>
 
+
+#include "common.h"
 #include "AES.h"
 #include "AES_crypto.h"
 #include "KeyDistrib.h"
