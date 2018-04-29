@@ -10,6 +10,6 @@
 
 
 #define CONFIG_START_ADDRESS    (uint8_t*)0x40
-#define UTESLA_KEY_ADDRESS      (uint8_t*)0x14F
+#define UTESLA_KEY_ADDRESS      (uint8_t*)0x1F4
 
 #endif //  ADDRESSES_H
