@@ -72,7 +72,7 @@ uTeslaMaster::uTeslaMaster(std::string &serial_port, const uint8_t *initial_key,
 #ifdef DEBUG
     std::cout << "Hash chain:" << std::endl;
 #endif
-    // TODO remove useless hashes (too many)
+    
     for(uint32_t i=1;i<rounds_num + 1;i++){
         m_hash_chain[i] = new uint8_t[m_hash_size];
         if(!m_hash->hash(m_hash_chain[i-1], m_hash_size, m_hash_chain[i], m_hash_size)){
