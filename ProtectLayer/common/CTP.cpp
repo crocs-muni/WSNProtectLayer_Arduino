@@ -143,4 +143,9 @@ void CTP::send(uint8_t *buffer, uint8_t length)
     rf12_sendNow(header, buffer, length);
 }
 
+uint8_t CTP::getParentID()
+{
+    return m_parent_id;
+}
+
 #endif

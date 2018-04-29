@@ -56,7 +56,7 @@ void printPacket(uint8_t packet_hdr, uint8_t packet_len, uint8_t *packet_data)
     Serial.println();
 }
 
-bool waitReceive(unsigned long end)
+bool waitReceive(uint32_t end)
 {
     while(1){
         if(millis() >= end){

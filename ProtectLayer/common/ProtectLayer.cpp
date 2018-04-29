@@ -1,8 +1,6 @@
 #include "ProtectLayer.h"
 
 
-// #undef __linux__
-
 #ifdef __linux__
 #include "configurator.h"
 
@@ -109,9 +107,10 @@ uint8_t ProtectLayer::startCTP()
     m_ctp.startCTP(CTP_DURATION_MS);
 }
 
-uint8_t ProtectLayer::send(msg_type_t msg_type, uint8_t *buffer, uint8_t size)
+uint8_t ProtectLayer::sendTo(msg_type_t msg_type, uint8_t receiver, uint8_t *buffer, uint8_t size)
 {
-
+    // TODO! not implemented yet
+    // receiver == 1 is BS
 }
 
 uint8_t ProtectLayer::receive(uint8_t *buffer, uint8_t buff_size)
@@ -154,16 +153,49 @@ uint8_t ProtectLayer::startCTP()
     m_ctp.startCTP(CTP_DURATION_MS);
 }
 
-uint8_t ProtectLayer::send(msg_type_t msg_type, uint8_t *buffer, uint8_t size)
+uint8_t ProtectLayer::sendCTP(msg_type_t msg_type, uint8_t *buffer, uint8_t size)
 {
-    // // TODO! fill m_msg_buffer
+    // TODO not implemented yet
+    return sendTo(msg_type, m_ctp.getParentID(), buffer, size);
+}
 
-    // m_ctp.send(m_msg_buffer, )
+uint8_t ProtectLayer::sendTo(msg_type_t msg_type, uint8_t receiver, uint8_t *buffer, uint8_t size)
+{
+    // TODO not implemented yet
+    if(receiver == 1){
+        // message for BS
+    }
+
+}
+
+uint8_t ProtectLayer::sendToBS(msg_type_t msg_type, uint8_t *buffer, uint8_t size)
+{
+    return sendTo(msg_type, BS_NODE_ID, buffer, size);
 }
 
 uint8_t ProtectLayer::receive(uint8_t *buffer, uint8_t buff_size)
 {
-    // TODO!
+    uint32_t now = millis();
+    
+    if(!waitReceive(now + NODE_RECV_TIMEOUT_MS)){
+        return ERR_TIMEOUT;
+    }
+
+    if(rf12_len > MAX_MSG_SIZE){
+        return ERR_BUFFSIZE;
+    }
+
+    uint8_t rcvd_hdr;
+    uint8_t rcvd_len;
+    uint8_t rcvd_buff[MAX_MSG_SIZE];
+
+    copy_rf12_to_buffer();
+
+    // TODO unprotect
+
+    return FAIL; // not implemented yet
+
+    return SUCCESS;
 }
 
 

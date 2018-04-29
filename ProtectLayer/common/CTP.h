@@ -36,7 +36,7 @@ public:
     // void forward(/*?*/);
     void send(uint8_t *buffer, uint8_t length);
 
-    uint8_t getParent();
+    uint8_t getParentID();
 };
 
 #endif

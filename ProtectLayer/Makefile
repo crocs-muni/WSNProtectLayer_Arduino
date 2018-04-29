@@ -1,8 +1,14 @@
+ifdef DEBUG
+MAKE=make DEBUG=$(DEBUG)
+else
+MAKE=make
+endif
+
 all:
-	make -C common
-	make -C BS_host
-	make -C BS_slave
-	make -C node
+	$(MAKE) -C common
+	$(MAKE) -C BS_host
+	make DEBUG= -C BS_slave
+	make DEBUG= -C node
 
 clean:
 	make -C common clean

@@ -3,7 +3,7 @@
 
 #include <stdint.h>
 
-#define ENABLE_UTESLA   1   // TODO move to Makefile
+#define ENABLE_UTESLA           1   // TODO move to Makefile
 
 #define MAX_MSG_SIZE            66  // maximum message length for RF12 radio
 
@@ -11,6 +11,10 @@
 #define CTP_REBROADCASTS_NUM    3
 
 #define DEFAULT_REQ_ACK         0
+
+#define NODE_RECV_TIMEOUT_MS    100
+
+#define BS_NODE_ID              1
 
 typedef uint8_t msg_type_t;
 

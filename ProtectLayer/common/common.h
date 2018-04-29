@@ -42,10 +42,12 @@ typedef uint16_t node_id_t;
 #define ERR_MSG_VRF         5   // message verification failed
 #define ERR_MSG_SIZE        6   // wrong message size
 #define ERR_SERIAL_RD       7   // failed to read message from serial port
+#define ERR_BUFFSIZE        8   // buffer too small
+#define ERR_TIMEOUT         9   // timeout
 
 // requires rcvd_len, rcvd_hdr, rcvd_buff
 // #define copy_rf12_to_buffer { rcvd_len = rf12_len; rcvd_hdr = rf12_hdr; memcpy(rcvd_buff, rf12_data, rf12_len); rf12_recvDone(); replyAck(); rf12_recvDone(); }
-#define copy_rf12_to_buffer { rcvd_len = rf12_len; rcvd_hdr = rf12_hdr; memcpy(rcvd_buff, rf12_data, rf12_len); replyAck(); rf12_recvDone(); }
+#define copy_rf12_to_buffer() { rcvd_len = rf12_len; rcvd_hdr = rf12_hdr; memcpy(rcvd_buff, rf12_data, rf12_len); replyAck(); rf12_recvDone(); }
 
 
 #ifndef  __linux__

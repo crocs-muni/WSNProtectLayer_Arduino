@@ -8,6 +8,7 @@
 
 #define ENABLE_UTESLA   1   // TODO move to Makefile
 
+// #undef __linux__ // TODO!!! REMOVE - just for VS Code syntax highliting
 
 #ifdef __linux__
 
