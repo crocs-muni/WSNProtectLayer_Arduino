@@ -1,6 +1,8 @@
 #ifndef CONFIGURATOR_H
 #define CONFIGURATOR_H
 
+#include "ProtectLayerGlobals.h"
+
 #include <vector>
 #include <string>
 #include <fstream>

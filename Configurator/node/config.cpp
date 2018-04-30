@@ -53,6 +53,7 @@ void loop()
 {
     uint8_t buffer[BUFFER_SIZE];
     if(Serial.available() > 0){
+
         uint8_t len1 = Serial.read();
         while(Serial.available() < 1);
         uint8_t len2 = Serial.read();

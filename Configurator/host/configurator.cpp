@@ -122,6 +122,12 @@ m_key_size(key_size), m_uTESLA_rounds(uTESLA_rounds)
             if(!readID(device_name, &node_id)){
                 throw std::runtime_error("Device ID not supplied for " + device_name);
             }
+
+            if(node_id == BS_NODE_ID){
+                std::stringstream err;
+                err << "Device ID " << BS_NODE_ID << " is reserved for BS";
+                throw std::runtime_error(err.str());
+            }
             
             if(!generateBSKey(node, node_id, device_name, random_file)){
                 throw std::runtime_error("Failed to generate BS key");
@@ -465,9 +471,9 @@ int set_interface_attribs (int fd, int speed, int parity)
     tty.c_cflag &= ~CSTOPB;
     tty.c_cflag &= ~CRTSCTS;
 
-    if (tcsetattr (fd, TCSANOW, &tty) != 0){
-            std::cerr << "error " << errno << " from tcsetattr: " << std::endl;
-            return -1;
+    if(tcsetattr (fd, TCSANOW, &tty) != 0){
+        std::cerr << "error " << errno << " from tcsetattr: " << std::endl;
+        return -1;
     }
     return 0;
 }
@@ -476,16 +482,16 @@ void set_blocking (int fd, int should_block)
 {
     struct termios tty;
     memset (&tty, 0, sizeof tty);
-    if (tcgetattr (fd, &tty) != 0){
-            std::cerr << "error " << errno << " from tggetattr" << std::endl;
-            return;
+    if(tcgetattr (fd, &tty) != 0){
+        std::cerr << "error " << errno << " from tggetattr" << std::endl;
+        return;
     }
 
     tty.c_cc[VMIN]  = should_block ? 1 : 0;
     tty.c_cc[VTIME] = 30;
 
     if (tcsetattr (fd, TCSANOW, &tty) != 0){
-         std::cerr << "error " << errno << " setting term attributes" << std::endl;
+        std::cerr << "error " << errno << " setting term attributes" << std::endl;
     }
 }
 
@@ -668,14 +674,14 @@ bool Configurator::uploadSingle(const Node &node, int node_index)   // TODO remo
         if(i != node_index){
             message_buffer[3] = m_nodes[i].ID;
             if(node_index < i){
-    #ifdef DEBUG
+#ifdef DEBUG
                 std::cout << "Uploading key [" << i << "][" << node_index << "]" << std::endl;
-    #endif
+#endif
                 memcpy(message_buffer + 4, m_pairwise_keys[i][node_index].data(), m_key_size);
             } else {
-    #ifdef DEBUG
+#ifdef DEBUG
                 std::cout << "Uploading key [" << node_index << "][" << i << "]" << std::endl;
-    #endif
+#endif
                 memcpy(message_buffer + 4, m_pairwise_keys[node_index][i].data(), m_key_size);
             }
 
@@ -727,7 +733,7 @@ bool Configurator::uploadSingle(const Node &node, int node_index)   // TODO remo
         if(node_index == req_key_node_index){
             req_key_node_index--;
         }
-        std::cout << "Requesting key for node " << (int) req_key_node_index << " from node "<< node_index << std::endl;
+        std::cout << "Requesting key for node " << (int) m_nodes[req_key_node_index].ID << " from node "<< (int) m_nodes[node_index].ID << std::endl;
         if(!requestKey(fd, m_nodes[req_key_node_index].ID)){
             std::cerr << "Failed to read key that was set" << std::endl;
             return false;

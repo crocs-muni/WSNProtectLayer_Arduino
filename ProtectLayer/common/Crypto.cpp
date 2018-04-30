@@ -19,7 +19,7 @@ uint8_t Crypto::protectBufferForNodeB(node_id_t nodeID, uint8_t* buffer, uint8_t
         // pl_log_e(TAG," protectBufferForNodeB key not retrieved.\n");
         return status;
     }
-
+    
     return protectBufferB(m_key1, buffer, offset, pLen);
 }
 
@@ -33,7 +33,7 @@ uint8_t Crypto::unprotectBufferFromNodeB(node_id_t nodeID, uint8_t* buffer, uint
         // pl_log_e(TAG," unprotectBufferFromNodeB key not retrieved.\n");
         return status;
     }
-    
+
     return unprotectBufferB(m_key1, buffer, offset, pLen);
 }
 
@@ -224,10 +224,10 @@ uint8_t Crypto::encryptBufferB(PL_key_t* key, uint8_t* buffer, uint8_t offset, u
     
     //process buffer by blocks 
     for(i = 0; i < (len / BLOCK_SIZE) + 1; i++){        
-        plainCounter[0] =  key->counter;
-        plainCounter[1] =  (key->counter) >> 8;
-        plainCounter[2] =  (key->counter) >> 16;
-        plainCounter[3] =  (key->counter) >> 24;
+        plainCounter[0] =  (*key->counter);
+        plainCounter[1] =  (*(key->counter)) >> 8;
+        plainCounter[2] =  (*(key->counter)) >> 16;
+        plainCounter[3] =  (*(key->counter)) >> 24;
         m_cipher->encrypt(plainCounter, m_exp, encCounter);
         
         for (j = 0; j < BLOCK_SIZE; j++){
@@ -236,8 +236,8 @@ uint8_t Crypto::encryptBufferB(PL_key_t* key, uint8_t* buffer, uint8_t offset, u
             }
             buffer[offset + i*BLOCK_SIZE + j] ^= encCounter[j];
         }
-        (key->counter)++;
-        if((key->counter) == 0){            
+        (*(key->counter))++;
+        if((*(key->counter)) == 0){            
             // pl_log_i(TAG,"  encryptBufferB counter overflow, generate new key requiered.\n"); 
             
             //deal with new key and counter value reset
@@ -350,6 +350,8 @@ uint8_t Crypto::protectBufferB(PL_key_t* key, uint8_t* buffer, uint8_t offset, u
         // pl_printf("CryptoP:  protectBufferForBSB encrypt failed.\n");
         return status;		
     }
+
+    *pLen += m_mac->macSize();   // TODO correct?
     
     return status;
 }
@@ -358,7 +360,7 @@ uint8_t Crypto::unprotectBufferB(PL_key_t* key, uint8_t* buffer, uint8_t offset,
 {
     uint8_t status = SUCCESS;
     uint8_t i;
-    uint32_t counter = key->counter;
+    uint32_t counter = *(key->counter);
     // pl_log_d(TAG, " unprotectBufferB called.\n");
     //offset is used for encryption shift, to verify SPheader, but not to encrypt it
 
@@ -369,14 +371,14 @@ uint8_t Crypto::unprotectBufferB(PL_key_t* key, uint8_t* buffer, uint8_t offset,
     if((status = verifyMac(key, buffer, 0, pLen)) != SUCCESS){            
         // pl_log_e(TAG, "  unprotectBufferB mac verification failed, trying to sychronize counter.\n"); 
         for (i = 1; i <= COUNTER_SYNCHRONIZATION_WINDOW; i++){    
-            key->counter = counter - i;
+            *(key->counter) = counter - i;
             decryptBufferB(key, buffer, offset, *pLen);
             if((status = verifyMac(key, buffer, 0, pLen)) == SUCCESS){
                 // pl_log_i(TAG, " counter synchronization succesfull.\n");
                 return status;
             }
     
-            key->counter = counter + i;
+            *(key->counter) = counter + i;
             decryptBufferB(key, buffer, offset, *pLen);
             if((status = verifyMac(key, buffer, 0, pLen)) == SUCCESS){
                 // pl_log_i(TAG, " counter synchronization succesfull.\n");
@@ -384,7 +386,7 @@ uint8_t Crypto::unprotectBufferB(PL_key_t* key, uint8_t* buffer, uint8_t offset,
             }
         }
         // pl_log_e(TAG, " counter could not be sychronized, decrypt failed.\n");
-        key->counter = counter;
+        *(key->counter) = counter;
         return status;
     }
     return status;

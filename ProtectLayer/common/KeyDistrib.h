@@ -11,8 +11,9 @@
 class KeyDistrib {
 private:
 	PL_key_t m_key;
+	uint32_t m_counters[MAX_NODE_NUM + 1];
 public:
-	// KeyDistrib(); // TODO! remove
+	KeyDistrib(); // TODO! remove
 	// /**
 	// 	Command: Posts taks for key task_discoverKeys for key discovery
 	// 	@return error_t status. SUCCESS or EALREADY if already pending

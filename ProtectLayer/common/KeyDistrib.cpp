@@ -11,10 +11,11 @@
 #define CONFIG_START_ADDRESS    (uint8_t*)0x40
 #define KEY_STRUCT_SIZE         sizeof(PL_key_t)
 
-// KeyDistrib::KeyDistrib()
-// {
-//     memset((void*) &m_key, 0, sizeof(PL_key_t));
-// }
+KeyDistrib::KeyDistrib()
+{
+    memset((void*) &m_key, 0, sizeof(PL_key_t));
+    memset((void*) m_counters, 0, MAX_NODE_NUM * sizeof(uint32_t));
+}
 //
 // uint8_t KeyDistrib::discoverKeys()
 // {
@@ -25,8 +26,9 @@
 
 uint8_t KeyDistrib::getKeyToNodeB(uint8_t nodeID, PL_key_t** pNodeKey)
 {
-    m_key.counter = 0;
-    eeprom_read_block(m_key.keyValue, CONFIG_START_ADDRESS + (nodeID * KEY_SIZE), KEY_SIZE);
+    // m_key.counter = 0;
+    eeprom_read_block(m_key.keyValue, CONFIG_START_ADDRESS + (nodeID * KEY_SIZE), KEY_SIZE);// TODO! REMOVE
+    m_key.counter = m_counters + nodeID;
     *pNodeKey = &m_key;
 
     return SUCCESS;
@@ -34,8 +36,9 @@ uint8_t KeyDistrib::getKeyToNodeB(uint8_t nodeID, PL_key_t** pNodeKey)
 
 uint8_t KeyDistrib::getKeyToBSB(PL_key_t** pBSKey)
 {
-    m_key.counter = 0;
+    // m_key.counter = 0;
     eeprom_read_block(m_key.keyValue, CONFIG_START_ADDRESS, KEY_SIZE);
+    m_key.counter = m_counters + 1;
     *pBSKey = &m_key;
 
     return SUCCESS;
@@ -44,7 +47,7 @@ uint8_t KeyDistrib::getKeyToBSB(PL_key_t** pBSKey)
 uint8_t KeyDistrib::getHashKeyB(PL_key_t** pHashKey)
 {
     // set to 0 in original WSNProtectLayer
-    m_key.counter = 0;
+    *(m_key.counter) = 0;
     memset(m_key.keyValue, 0, KEY_SIZE);
     *pHashKey = &m_key;
 

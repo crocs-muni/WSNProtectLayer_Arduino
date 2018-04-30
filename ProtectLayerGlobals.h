@@ -16,6 +16,8 @@
 
 #define BS_NODE_ID              1
 
+#define AUTOFORWARD				1	// auto forwarding of messages for BS
+
 typedef uint8_t msg_type_t;
 
 /**
@@ -44,6 +46,6 @@ typedef struct SPHeader {
 // #endif
 } SPHeader_t;
 
-
+#define SPHEADER_SIZE	sizeof(SPHeader_t)
 
 #endif //  PROTECTLAYERGLOBALS_H

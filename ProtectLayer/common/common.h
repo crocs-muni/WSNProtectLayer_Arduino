@@ -22,6 +22,7 @@ typedef uint16_t node_id_t;
 #define NODE_ID_LOCATION    0
 #define GROUP_ID_LOCATION   1
 #define PARENT_ID_LOCATION  2
+#define MAX_NODE_NUM        30
 
 // buffer size settings
 #define MSG_BUF_SIZE        40
@@ -80,6 +81,7 @@ void sendWait(char* message, uint8_t length, uint8_t header, unsigned int end);
 
 void printError(int err_num);
 
+int freeRam();
 #else
 
 uint64_t millis();

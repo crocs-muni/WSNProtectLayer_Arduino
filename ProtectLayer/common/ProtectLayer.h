@@ -58,7 +58,7 @@ public:
 
     uint8_t startCTP();
 
-    uint8_t receive(uint8_t *buffer, uint8_t buff_size);
+    uint8_t receive(uint8_t *buffer, uint8_t buff_size, uint8_t *received_size);
 };
 
 #endif //  PROTECTLAYER_H

@@ -88,13 +88,13 @@ void CTP::handleDistanceMessages(uint32_t end)
 {
     uint8_t rcvd_msg[sizeof(SPHeader_t) + 1];
     uint8_t rcvd_msg_len;
-    uint8_t rcvd_msg_hdr;
+    // uint8_t rcvd_msg_hdr;
 
     while(waitReceive(end)){
         replyAck();
         if(rf12_len == sizeof(SPHeader_t) + 1){
             rcvd_msg_len = rf12_len;
-            rcvd_msg_hdr = rf12_hdr;
+            // rcvd_msg_hdr = rf12_hdr;
             memcpy( rcvd_msg, rf12_data, rcvd_msg_len);    
         }
         rf12_recvDone();
@@ -134,7 +134,13 @@ uint8_t CTP::startCTP(uint32_t duration)
         
         // if there is time left (should be), continue receiving distance messages
         handleDistanceMessages(ms + 300);
-    }    
+    }
+
+    if(m_distance >= 50 || m_parent_id == 0){
+        return FAIL;
+    }
+
+    return SUCCESS;
 }
 
 void CTP::send(uint8_t *buffer, uint8_t length)

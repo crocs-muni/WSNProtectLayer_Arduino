@@ -113,7 +113,7 @@ uint8_t ProtectLayer::sendTo(msg_type_t msg_type, uint8_t receiver, uint8_t *buf
     // receiver == 1 is BS
 }
 
-uint8_t ProtectLayer::receive(uint8_t *buffer, uint8_t buff_size)
+uint8_t ProtectLayer::receive(uint8_t *buffer, uint8_t buff_size, uint8_t *received_size)
 {
     if(read(m_slave_fd, buffer, buff_size) < 1){
         return FAIL;
@@ -141,7 +141,7 @@ m_hash(&m_aes), m_mac(&m_aes), m_crypto(&m_aes, &m_mac, &m_hash, &m_keydistrib)
 {
     Serial.begin(BAUD_RATE);
 
-    m_node_id == eeprom_read_byte(0);
+    m_node_id = eeprom_read_byte(0);
     m_ctp.setNodeID(m_node_id);
 
     rf12_initialize(m_node_id, RADIO_FREQ, RADIO_GROUP);
@@ -150,7 +150,7 @@ m_hash(&m_aes), m_mac(&m_aes), m_crypto(&m_aes, &m_mac, &m_hash, &m_keydistrib)
 
 uint8_t ProtectLayer::startCTP()
 {
-    m_ctp.startCTP(CTP_DURATION_MS);
+    return m_ctp.startCTP(CTP_DURATION_MS);
 }
 
 uint8_t ProtectLayer::sendCTP(msg_type_t msg_type, uint8_t *buffer, uint8_t size)
@@ -161,11 +161,41 @@ uint8_t ProtectLayer::sendCTP(msg_type_t msg_type, uint8_t *buffer, uint8_t size
 
 uint8_t ProtectLayer::sendTo(msg_type_t msg_type, uint8_t receiver, uint8_t *buffer, uint8_t size)
 {
-    // TODO not implemented yet
-    if(receiver == 1){
-        // message for BS
+    if(!buffer || size + SPHEADER_SIZE > MAX_MSG_SIZE){ // TODO size can be bigger when using block cipher
+        return FAIL;
     }
 
+    if(receiver < 1 || receiver > 30){
+        return FAIL;
+    }
+
+    uint8_t pLen = size + SPHEADER_SIZE;
+    uint8_t msg_buffer[MAX_MSG_SIZE];   // TODO use some common buffer
+    SPHeader_t *header = reinterpret_cast<SPHeader_t*>(msg_buffer);
+    memset(msg_buffer, 0, MAX_MSG_SIZE);
+
+    header->msgType = msg_type;
+    header->receiver = receiver;
+    header->sender = m_node_id;
+    memcpy(msg_buffer + SPHEADER_SIZE, buffer, size);
+
+    uint8_t rval;
+    if(receiver == 1){
+        // message for BS
+        rval = m_crypto.protectBufferForBSB(msg_buffer, SPHEADER_SIZE, &pLen);
+    } else {
+        // message for node
+        rval = m_crypto.protectBufferForNodeB(receiver, msg_buffer, SPHEADER_SIZE, &pLen);
+    }
+
+    if(rval != SUCCESS){
+        return rval;
+    }
+
+    uint8_t rf12_header = createHeader(receiver, MODE_DST, DEFAULT_REQ_ACK);
+    rf12_sendNow(rf12_header, msg_buffer, pLen);
+
+    return SUCCESS;
 }
 
 uint8_t ProtectLayer::sendToBS(msg_type_t msg_type, uint8_t *buffer, uint8_t size)
@@ -173,11 +203,11 @@ uint8_t ProtectLayer::sendToBS(msg_type_t msg_type, uint8_t *buffer, uint8_t siz
     return sendTo(msg_type, BS_NODE_ID, buffer, size);
 }
 
-uint8_t ProtectLayer::receive(uint8_t *buffer, uint8_t buff_size)
+uint8_t ProtectLayer::receive(uint8_t *buffer, uint8_t buff_size, uint8_t *received_size)
 {
-    uint32_t now = millis();
+    // uint32_t now = millis();
     
-    if(!waitReceive(now + NODE_RECV_TIMEOUT_MS)){
+    if(!waitReceive(millis() + NODE_RECV_TIMEOUT_MS)){
         return ERR_TIMEOUT;
     }
 
@@ -189,11 +219,30 @@ uint8_t ProtectLayer::receive(uint8_t *buffer, uint8_t buff_size)
     uint8_t rcvd_len;
     uint8_t rcvd_buff[MAX_MSG_SIZE];
 
+    if(rf12_len > buff_size){
+        return FAIL;
+    }
     copy_rf12_to_buffer();
 
     // TODO unprotect
+    SPHeader_t *header = reinterpret_cast<SPHeader_t*>(rcvd_buff);
+    uint8_t rval;
+    if(header->sender == BS_NODE_ID){
+        rval = m_crypto.unprotectBufferFromBSB(rcvd_buff, SPHEADER_SIZE, &rcvd_len);
+    } else {
+        rval = m_crypto.unprotectBufferFromNodeB(header->sender, rcvd_buff, SPHEADER_SIZE, &rcvd_len);
+    }
 
-    return FAIL; // not implemented yet
+    if(rval != SUCCESS){
+        return FAIL;
+    }
+
+#ifdef AUTOFORWARD
+    // TODO protect buffer for parent and send
+#endif
+
+    memcpy(buffer, rcvd_buff, rcvd_len);
+    *received_size = rcvd_len;
 
     return SUCCESS;
 }

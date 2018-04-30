@@ -3,7 +3,7 @@
 
 #define MSG_TYPE_SIZE   1
 
-#define MSG_ID          0
+#define MSG_ID          0x58
 #define MSG_BS_KEY      1
 #define MSG_NODE_KEY    2
 #define MSG_UTESLA_KEY  3
