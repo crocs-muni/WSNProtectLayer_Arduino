@@ -11,7 +11,8 @@
 // #define RADIO_GROUP 10
 // #define BAUD_RATE   115200
 
-#define MSG_STR     "testtesttesttes"
+// #define MSG_STR     "16Blongstestmsg"
+#define MSG_STR     "testmsg"
 #define BUFFER_SIZE 66
 #define NODES_NUM   4
 
@@ -34,31 +35,41 @@ void setup()
     node_id = eeprom_read_byte(0);
     recipient = ((node_id - 1)  % NODES_NUM) + 2;
 
-    randomSeed(analogRead(0) + node_id * node_id);
-    Serial.print("A");
-    Serial.println(analogRead(0));
+    Serial.print(node_id);
+    Serial.print("->");
+    Serial.println(recipient);
+
+    randomSeed(analogRead(0) * node_id);
 }
 
 void loop()
 {
-    delay(random(5000));
-
-    strcpy(msg_buffer, MSG_STR);
+    strcpy((char*) msg_buffer, MSG_STR);
+    
+    uint32_t start = millis();
+    
     if(protect_layer.sendTo(MSG_APP, recipient, msg_buffer, strlen(MSG_STR) + 1) != SUCCESS){
-        Serial.println("Failed to send message");
+        Serial.println("Failed to send msg");
     }
+    // start = millis() - start;
+    // Serial.print("SND");
+    // Serial.println(start);
 
     uint8_t rcvd_len = 0;
     uint8_t rval;
-    for(int i=0;i<5;i++){
-        if((rval = protect_layer.receive(msg_buffer, BUFFER_SIZE, &rcvd_len)) == SUCCESS){
-            Serial.println("Received:");
+    while(millis() - start < (uint32_t) random(6000)){
+        if((rval = protect_layer.receive(msg_buffer, BUFFER_SIZE, &rcvd_len, 300)) == SUCCESS){
+            Serial.print(node_id);
+            Serial.println(" received:");
             printBuffer(msg_buffer, rcvd_len);
-            break;
+            msg_buffer[rcvd_len - 16] = 0;
+            Serial.println((char*)msg_buffer + 3);  // should print "testtesttesttes"
+            // break;
         }
     }
 
     if(rval != SUCCESS){
-        Serial.println("Failed to receive any message");
+        Serial.println("Failed to receive anything");
     }
+    
 }

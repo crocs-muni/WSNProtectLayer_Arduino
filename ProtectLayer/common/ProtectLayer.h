@@ -54,6 +54,7 @@ public:
     uint8_t sendCTP(msg_type_t msg_type, uint8_t *buffer, uint8_t size);    // TODO not implemented yet
     uint8_t sendTo(msg_type_t msg_type, uint8_t receiver, uint8_t *buffer, uint8_t size);   // TODO not implemented yet
     uint8_t sendToBS(msg_type_t msg_type, uint8_t *buffer, uint8_t size);   // TODO not implemented yet
+    uint8_t receive(uint8_t *buffer, uint8_t buff_size, uint8_t *received_size, uint16_t timeout);
 #endif
 
     uint8_t startCTP();

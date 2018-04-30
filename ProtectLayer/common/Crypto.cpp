@@ -358,14 +358,21 @@ uint8_t Crypto::protectBufferB(PL_key_t* key, uint8_t* buffer, uint8_t offset, u
 
 uint8_t Crypto::unprotectBufferB(PL_key_t* key, uint8_t* buffer, uint8_t offset, uint8_t* pLen)
 {
+    // uint32_t start = millis();
+    // // code
+    // start = millis() - start;
+    // Serial.print("KD");
+    // Serial.println(start);
+
+
     uint8_t status = SUCCESS;
     uint8_t i;
     uint32_t counter = *(key->counter);
     // uint8_t buffer_copy[*pLen];
     // memcpy(buffer_copy, buffer, *pLen);
     
-    Serial.print("C");
-    Serial.println(*key->counter);
+    // Serial.print("C");              // TODO! REMOVE
+    // Serial.println(*key->counter);  // TODO! REMOVE
     // pl_log_d(TAG, " unprotectBufferB called.\n");
     //offset is used for encryption shift, to verify SPheader, but not to encrypt it
 
@@ -375,10 +382,10 @@ uint8_t Crypto::unprotectBufferB(PL_key_t* key, uint8_t* buffer, uint8_t offset,
         return status;		
     }
 
-// TODO! REMOVE
-#ifndef __linux__
-    printBuffer(buffer, *pLen);
-#endif //  __linux__
+// // TODO! REMOVE
+// #ifndef __linux__
+//     printBuffer(buffer, *pLen);
+// #endif //  __linux__
 
     if((status = verifyMac(key, buffer, 0, pLen)) != SUCCESS){            
         // pl_log_e(TAG, "  unprotectBufferB mac verification failed, trying to sychronize counter.\n"); 

@@ -203,11 +203,21 @@ uint8_t ProtectLayer::sendToBS(msg_type_t msg_type, uint8_t *buffer, uint8_t siz
     return sendTo(msg_type, BS_NODE_ID, buffer, size);
 }
 
+
 uint8_t ProtectLayer::receive(uint8_t *buffer, uint8_t buff_size, uint8_t *received_size)
+{
+    return receive(buffer, buff_size, received_size, NODE_RECV_TIMEOUT_MS);
+}
+
+uint8_t ProtectLayer::receive(uint8_t *buffer, uint8_t buff_size, uint8_t *received_size, uint16_t timeout)
 {
     // uint32_t now = millis();
     
-    if(!waitReceive(millis() + NODE_RECV_TIMEOUT_MS)){
+    if(!timeout){
+        timeout = 1;
+    }
+
+    if(!waitReceive(millis() + timeout)){
         return ERR_TIMEOUT;
     }
 
@@ -227,8 +237,8 @@ uint8_t ProtectLayer::receive(uint8_t *buffer, uint8_t buff_size, uint8_t *recei
     // TODO unprotect
     SPHeader_t *header = reinterpret_cast<SPHeader_t*>(rcvd_buff);
     uint8_t rval;
-    Serial.print("> ");                // TODO! REMOVE
-    printBuffer(rcvd_buff, rcvd_len); // TODO! REMOVE
+    // Serial.print("> ");                // TODO! REMOVE
+    // printBuffer(rcvd_buff, rcvd_len); // TODO! REMOVE
     if(header->sender == BS_NODE_ID){
         rval = m_crypto.unprotectBufferFromBSB(rcvd_buff, SPHEADER_SIZE, &rcvd_len);
     } else {
