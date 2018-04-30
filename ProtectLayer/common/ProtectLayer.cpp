@@ -237,8 +237,10 @@ uint8_t ProtectLayer::receive(uint8_t *buffer, uint8_t buff_size, uint8_t *recei
     // TODO unprotect
     SPHeader_t *header = reinterpret_cast<SPHeader_t*>(rcvd_buff);
     uint8_t rval;
-    // Serial.print("> ");                // TODO! REMOVE
-    // printBuffer(rcvd_buff, rcvd_len); // TODO! REMOVE
+    // if(m_node_id == 3){
+    //     Serial.print("> ");                // TODO! REMOVE
+    //     printBuffer(rcvd_buff, rcvd_len); // TODO! REMOVE
+    // }
     if(header->sender == BS_NODE_ID){
         rval = m_crypto.unprotectBufferFromBSB(rcvd_buff, SPHEADER_SIZE, &rcvd_len);
     } else {

@@ -384,6 +384,7 @@ uint8_t Crypto::unprotectBufferB(PL_key_t* key, uint8_t* buffer, uint8_t offset,
 
 // // TODO! REMOVE
 // #ifndef __linux__
+//     Serial.print(">>");
 //     printBuffer(buffer, *pLen);
 // #endif //  __linux__
 

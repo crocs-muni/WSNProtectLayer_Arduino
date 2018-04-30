@@ -733,10 +733,20 @@ bool Configurator::uploadSingle(const Node &node, int node_index)   // TODO remo
         if(node_index == req_key_node_index){
             req_key_node_index--;
         }
-        std::cout << "Requesting key for node " << (int) m_nodes[req_key_node_index].ID << " from node "<< (int) m_nodes[node_index].ID << std::endl;
-        if(!requestKey(fd, m_nodes[req_key_node_index].ID)){
-            std::cerr << "Failed to read key that was set" << std::endl;
-            return false;
+        // std::cout << "Requesting key for node " << (int) m_nodes[req_key_node_index].ID << " from node "<< (int) m_nodes[node_index].ID << std::endl;
+        // if(!requestKey(fd, m_nodes[req_key_node_index].ID)){
+        //     std::cerr << "Failed to read key that was set" << std::endl;
+        //     return false;
+        // }
+        for(int i=0;i<m_nodes_num;i++){
+            if(i == node_index){
+                continue;
+            }
+            std::cout << "Requesting key for node " << (int) m_nodes[i].ID << " from node "<< (int) m_nodes[node_index].ID << std::endl;
+            if(!requestKey(fd, m_nodes[i].ID)){
+                std::cerr << "Failed to read key that was set" << std::endl;
+                return false;
+            }
         }
     } else {
         std::cout << "Not requesting key to verify because there is only 1 node" << std::endl;// TODO req BS key

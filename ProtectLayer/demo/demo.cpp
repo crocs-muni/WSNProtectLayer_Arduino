@@ -48,16 +48,13 @@ void loop()
     
     uint32_t start = millis();
     
-    if(protect_layer.sendTo(MSG_APP, recipient, msg_buffer, strlen(MSG_STR) + 1) != SUCCESS){
-        Serial.println("Failed to send msg");
-    }
     // start = millis() - start;
     // Serial.print("SND");
     // Serial.println(start);
 
     uint8_t rcvd_len = 0;
     uint8_t rval;
-    while(millis() - start < (uint32_t) random(6000)){
+    while(millis() - start < (uint32_t) random(20) * 1000){
         if((rval = protect_layer.receive(msg_buffer, BUFFER_SIZE, &rcvd_len, 300)) == SUCCESS){
             Serial.print(node_id);
             Serial.println(" received:");
@@ -68,8 +65,15 @@ void loop()
         }
     }
 
-    if(rval != SUCCESS){
-        Serial.println("Failed to receive anything");
+    if(!random(NODES_NUM)){
+        if(protect_layer.sendTo(MSG_APP, recipient, msg_buffer, strlen(MSG_STR) + 1) != SUCCESS){
+            Serial.println("Failed to send msg");
+        }
     }
+
+    // if(rval != SUCCESS){
+    //     Serial.print(node_id);
+    //     Serial.println(" failed to receive anything");
+    // }
     
 }
