@@ -34,12 +34,14 @@ void setup()
     node_id = eeprom_read_byte(0);
     recipient = ((node_id - 1)  % NODES_NUM) + 2;
 
-    randomSeed(analogRead(0)  + node_id);
+    randomSeed(analogRead(0) + node_id * node_id);
+    Serial.print("A");
+    Serial.println(analogRead(0));
 }
 
 void loop()
 {
-    delay(random(1000));
+    delay(random(5000));
 
     strcpy(msg_buffer, MSG_STR);
     if(protect_layer.sendTo(MSG_APP, recipient, msg_buffer, strlen(MSG_STR) + 1) != SUCCESS){

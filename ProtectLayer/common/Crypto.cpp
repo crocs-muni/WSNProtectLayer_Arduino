@@ -361,25 +361,39 @@ uint8_t Crypto::unprotectBufferB(PL_key_t* key, uint8_t* buffer, uint8_t offset,
     uint8_t status = SUCCESS;
     uint8_t i;
     uint32_t counter = *(key->counter);
+    // uint8_t buffer_copy[*pLen];
+    // memcpy(buffer_copy, buffer, *pLen);
+    
+    Serial.print("C");
+    Serial.println(*key->counter);
     // pl_log_d(TAG, " unprotectBufferB called.\n");
     //offset is used for encryption shift, to verify SPheader, but not to encrypt it
 
-    if((status = decryptBufferB(key, buffer, offset, *pLen)) != SUCCESS){
+    // if((status = decryptBufferB(key, buffer, offset, *pLen) != SUCCESS){
+    if((status = decryptBufferB(key, buffer, offset, *pLen - m_mac->macSize())) != SUCCESS){
         // pl_log_e(TAG, "  unprotectBufferB encrypt failed.\n");
         return status;		
     }
+
+// TODO! REMOVE
+#ifndef __linux__
+    printBuffer(buffer, *pLen);
+#endif //  __linux__
+
     if((status = verifyMac(key, buffer, 0, pLen)) != SUCCESS){            
         // pl_log_e(TAG, "  unprotectBufferB mac verification failed, trying to sychronize counter.\n"); 
+        // memcpy(buffer, buffer_copy, *pLen);
+        // printBuffer(buffer, *pLen);
         for (i = 1; i <= COUNTER_SYNCHRONIZATION_WINDOW; i++){    
             *(key->counter) = counter - i;
-            decryptBufferB(key, buffer, offset, *pLen);
+            decryptBufferB(key, buffer, offset, *pLen- m_mac->macSize());
             if((status = verifyMac(key, buffer, 0, pLen)) == SUCCESS){
                 // pl_log_i(TAG, " counter synchronization succesfull.\n");
                 return status;
             }
     
             *(key->counter) = counter + i;
-            decryptBufferB(key, buffer, offset, *pLen);
+            decryptBufferB(key, buffer, offset, *pLen - m_mac->macSize());
             if((status = verifyMac(key, buffer, 0, pLen)) == SUCCESS){
                 // pl_log_i(TAG, " counter synchronization succesfull.\n");
                 return status;
