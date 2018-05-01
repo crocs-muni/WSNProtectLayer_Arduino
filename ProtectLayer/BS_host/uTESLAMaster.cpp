@@ -101,9 +101,9 @@ uTeslaMaster::uTeslaMaster(const int32_t device_fd, const uint8_t *initial_key, 
     m_hash_chain[0] = new uint8_t[m_hash_size];
     memcpy(m_hash_chain[0], initial_key, m_hash_size);
 
-#ifdef DEBUG
-    std::cout << "Hash chain:" << std::endl;
-#endif
+//#ifdef DEBUG
+//    std::cout << "Hash chain:" << std::endl;
+//#endif
     for(uint32_t i=1;i<rounds_num + 1;i++){
         m_hash_chain[i] = new uint8_t[m_hash_size];
         if(!m_hash->hash(m_hash_chain[i-1], m_hash_size, m_hash_chain[i], m_hash_size)){
@@ -111,9 +111,9 @@ uTeslaMaster::uTeslaMaster(const int32_t device_fd, const uint8_t *initial_key, 
             uTeslaMasterException ex("Failed to initialize hash chain");
             throw ex;
         }
-#ifdef DEBUG
-        printBufferHex(m_hash_chain[i], m_hash_size);// << std::endl;
-#endif
+//#ifdef DEBUG
+//        printBufferHex(m_hash_chain[i], m_hash_size);// << std::endl;
+//#endif
     }
 
 }

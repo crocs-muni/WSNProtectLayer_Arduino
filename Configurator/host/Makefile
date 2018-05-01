@@ -29,4 +29,5 @@ $(LIB_NAME):
 
 clean:
 	rm -vf *.o
+	rm -vf $(LIB_NAME)
 	rm -vf $(APP_NAME)

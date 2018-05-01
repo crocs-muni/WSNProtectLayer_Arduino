@@ -5,6 +5,7 @@
 #include "common.h"
 #include "AES_crypto.h"
 #include "KeyDistrib.h"
+#include "ProtectLayerGlobals.h"
 // #include "uTESLA.h"
 
 #ifndef MAC_LENGTH

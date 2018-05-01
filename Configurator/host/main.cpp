@@ -12,8 +12,14 @@ using namespace std;
 void printHelp(const char *appname)
 {
     cout << "Usage:" << endl
-        << appname << " -c config_file -k key_size" << endl
-        << "Note: config file contains device paths" << endl;
+        << appname << " [ -g config_file ] [ -l key_input_file ] "
+        << "[ -k key_size ] [ -s key_output_file ] "
+        << "[ -u ] [ -r uTESLA_rounds ] [ -h ]" << endl;
+    cout << endl << "Configuration file pattern:" << endl
+        << "/path/to/device/ device_id" << endl;
+    cout << "Either -g or -l must be specified to generate or load keys" << endl;
+    cout << "Key size must be specified if generating new keys" << endl;
+    cout << "-s, -u and -r are optional" << endl;
 }
 
 
@@ -25,9 +31,9 @@ int main(int argc, char **argv)
     string  out_filename;
     int     key_size    = 0;
     bool    generate    = false;
-    bool    save        = false;    // TODO
-    bool    load        = false;    // TODO
-    bool    upload      = false;    // TODO
+    bool    save        = false;
+    bool    load        = false;
+    bool    upload      = false;
     int     uTESLA_rnds = 0;
 
     while ((c = getopt (argc, argv, "g:k:l:s:ur:h")) != -1){

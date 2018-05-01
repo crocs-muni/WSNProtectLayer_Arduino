@@ -16,8 +16,13 @@
 
 #define BS_NODE_ID              1
 
-#define AUTOFORWARD				1	// auto forwarding of messages for BS
+// #define AUTOFORWARD				1	// auto forwarding of messages for BS
 
+// TODO! enum or defines for all return values
+#define FORWARD					5
+
+
+typedef uint8_t node_id_t;
 typedef uint8_t msg_type_t;
 
 /**
@@ -29,6 +34,7 @@ typedef enum _MSG_TYPE {
 	MSG_ROUTE,	/**< message of routing component */
 	MSG_FORWARD, /**< message to be forwarded to BS */
     MSG_CTP,    /**< CTP distance message */
+	MSG_BRDCST,	/**< uTESLA broadcast message */
 	MSG_COUNT   /**< number of message types */
 } MSG_TYPE;
 

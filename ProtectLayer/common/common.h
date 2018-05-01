@@ -7,8 +7,6 @@
 #endif
 #include <stdint.h>
 
-typedef uint16_t node_id_t;
-
 
 #define FAIL            1
 #define SUCCESS         0
@@ -32,7 +30,7 @@ typedef uint16_t node_id_t;
 #define MODE_DST            1
 
 // devices' IDs settings
-#define BS_ID               1
+// #define BS_ID               1
 
 #define ERROR_MESSAGE       "Err"
 #define ERR_OK              0   // everything ok, not an error
@@ -48,7 +46,7 @@ typedef uint16_t node_id_t;
 
 // requires rcvd_len, rcvd_hdr, rcvd_buff
 // #define copy_rf12_to_buffer { rcvd_len = rf12_len; rcvd_hdr = rf12_hdr; memcpy(rcvd_buff, rf12_data, rf12_len); rf12_recvDone(); replyAck(); rf12_recvDone(); }
-#define copy_rf12_to_buffer() { rcvd_len = rf12_len; rcvd_hdr = rf12_hdr; memcpy(rcvd_buff, rf12_data, rf12_len); replyAck(); rf12_recvDone(); }
+#define copy_rf12_to_buffer() { rcvd_len = rf12_len; rcvd_hdr = rf12_hdr; memcpy(rcvd_buff, (const void*) rf12_data, rf12_len); replyAck(); rf12_recvDone(); }
 
 
 #ifndef  __linux__
