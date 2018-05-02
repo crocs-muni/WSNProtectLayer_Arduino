@@ -8,11 +8,18 @@
 
 #define BUFFER_SIZE 64
 
-#define reply_ok()            \
-    buffer[0] = REPLY_OK;   \
-    Serial.write(buffer, 1);\
-    Serial.flush();         \
-    return;
+// #define reply_ok()            \
+//     buffer[0] = REPLY_OK;   \
+//     Serial.write(buffer, 1);\
+//     Serial.flush();
+
+#define reply(response)     \
+    Serial.write(response); \
+    Serial.flush();
+
+#define reply_ok()          \
+    Serial.write(REPLY_OK); \
+    Serial.flush();
 
 
 uint8_t address    = 0;
@@ -53,7 +60,6 @@ void loop()
 {
     uint8_t buffer[BUFFER_SIZE];
     if(Serial.available() > 0){
-
         uint8_t len1 = Serial.read();
         while(Serial.available() < 1);
         uint8_t len2 = Serial.read();
@@ -71,7 +77,7 @@ void loop()
             Serial.flush();
             return;
         }
-    
+
         if(buffer[0] == MSG_ID){
             if(len1 < 2){
                 buffer[0] = REPLY_ERR_MSG_SIZE; // TODO maybe different error code
