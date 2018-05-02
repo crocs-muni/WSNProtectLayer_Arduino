@@ -8,7 +8,8 @@
 #define MAX_MSG_SIZE            66  // maximum message length for RF12 radio
 
 #define CTP_DURATION_MS         10000
-#define CTP_REBROADCASTS_NUM    3
+#define CTP_REBROADCASTS_NUM    5
+#define CTP_REBROADCASTS_DELAY	500
 
 #define DEFAULT_REQ_ACK         0
 

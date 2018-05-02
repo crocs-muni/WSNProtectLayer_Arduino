@@ -21,10 +21,12 @@ int main(int argc, char **argv)
 
         if(protect_layer.startCTP() != SUCCESS){
             cerr << "Failed to establish CTP tree" << endl;
+            cerr.flush();
             return 7;
         }
     } catch(runtime_error &ex){
         cerr << ex.what();
+        cerr.flush();
         return 15;
     }
     

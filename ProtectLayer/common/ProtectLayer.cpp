@@ -87,7 +87,7 @@ int openSerialPort(std::string path);   // TODO move from configurator to separa
 
 ProtectLayer::ProtectLayer(std::string &slave_path, std::string &key_file):
 m_hash(&m_aes), m_mac(&m_aes), m_keydistrib(key_file), m_crypto(&m_aes, &m_mac, &m_hash, &m_keydistrib)
-{
+{ 
     m_slave_fd = openSerialPort(slave_path);
     if(m_slave_fd < 0){
         throw std::runtime_error("Failed to open serial port");
@@ -96,6 +96,10 @@ m_hash(&m_aes), m_mac(&m_aes), m_keydistrib(key_file), m_crypto(&m_aes, &m_mac, 
     m_ctp.setSlaveFD(m_slave_fd);
     Configurator configurator(key_file, 0, 0);
     m_utesla = new uTeslaMaster(m_slave_fd, configurator.getuTESLAKey(), configurator.getuTESLARounds(), &m_hash, &m_mac);
+
+    // fire up the device
+    uint8_t buffer[MAX_MSG_SIZE];
+    read(m_slave_fd, buffer, MAX_MSG_SIZE);
 }
 
 ProtectLayer::~ProtectLayer()

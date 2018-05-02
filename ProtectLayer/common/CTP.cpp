@@ -19,6 +19,7 @@ uint8_t CTP::startCTP(uint32_t duration)
 {
     uint64_t start = millis();
     uint8_t buffer[MAX_MSG_SIZE];
+    uint8_t recv_buffer[MAX_MSG_SIZE];
 
     // read(m_slave_fd, buffer, MAX_MSG_SIZE);
 
@@ -35,17 +36,16 @@ uint8_t CTP::startCTP(uint32_t duration)
         if((len = write(m_slave_fd, buffer, sizeof(SPHeader_t) + 3)) < sizeof(SPHeader_t) + 3){
             return FAIL;
         }
-        std::cout << "w" << std::endl;  // TODO REMOVE
 
-        if((len = read(m_slave_fd, buffer, MAX_MSG_SIZE)) < 1){
+        if((len = read(m_slave_fd, recv_buffer, MAX_MSG_SIZE)) < 1){
             return FAIL;
         }
-        std::cout << "r" << std::endl;  // TODO REMOVE
-
-        if(buffer[0] != ERR_OK){
-            return FAIL;
+        
+        if(recv_buffer[0] != ERR_OK){
+           return FAIL;
         }
-        std::cout << "ok" << std::endl;  // TODO REMOVE
+
+        std::this_thread::sleep_for(std::chrono::milliseconds(CTP_REBROADCASTS_DELAY));
     }
 
     // sleep until CTP formation ends

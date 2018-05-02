@@ -35,6 +35,8 @@ void loop()
         uint8_t len1 = Serial.read();
         while(Serial.available() < 1);
         uint8_t len2 = Serial.read();
+            // Serial.write(len1);
+            // Serial.write(len2);
         if(len1 != len2){
             // Serial.print("Incorrect length byte: ");
             // Serial.println(len2);
@@ -63,6 +65,10 @@ void loop()
     if(rf12_recvDone() && !rf12_crc){
         if((rf12_hdr & RF12_HDR_MASK) != BS_NODE_ID){
             rf12_recvDone();
+            return;
+        }
+
+        if(buffer[0] == MSG_CTP){
             return;
         }
 
