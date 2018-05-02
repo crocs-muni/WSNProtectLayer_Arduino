@@ -8,7 +8,7 @@
 #include <cstring>
 #include <unistd.h>
 
-
+// #include "uTESLAMaster.h"
 
 void CTP::setSlaveFD(int slave_fd)
 {
@@ -24,15 +24,21 @@ uint8_t CTP::startCTP(uint32_t duration)
     // read(m_slave_fd, buffer, MAX_MSG_SIZE);
 
     memset(buffer, 0, MAX_MSG_SIZE);
-    SPHeader_t header = { MSG_CTP, 0, 0 };
+    // SPHeader_t header = { MSG_CTP, BS_NODE_ID, 0 };
 
-    buffer[0] = sizeof(SPHeader_t) + 1;
+    buffer[0] = SPHEADER_SIZE + 1;
     buffer[1] = buffer[0];
-    memcpy(buffer + 2, &header, sizeof(SPHeader_t));
-    buffer[sizeof(SPHeader_t)] = 0;
+    // memcpy(buffer + 2, &header, SPHEADER_SIZE);
+    SPHeader_t *header = reinterpret_cast<SPHeader_t*>(buffer + 2);
+    header->msgType = MSG_CTP;
+    header->sender = BS_NODE_ID;
+    header->receiver = 0;
+
+    buffer[SPHEADER_SIZE + 2] = 0;
 
     for(int i=0;i<CTP_REBROADCASTS_NUM;i++){
         int len;
+        // printBufferHex(buffer, SPHEADER_SIZE + 3);
         if((len = write(m_slave_fd, buffer, sizeof(SPHeader_t) + 3)) < sizeof(SPHeader_t) + 3){
             return FAIL;
         }
@@ -61,7 +67,7 @@ uint8_t CTP::startCTP(uint32_t duration)
 #include "RF12.h"
 
 CTP::CTP(): 
-m_parent_id(0), m_distance(50), m_req_ack(DEFAULT_REQ_ACK)
+m_parent_id(0), m_distance(50), m_req_ack(DEFAULT_REQ_ACK), m_node_id(0)
 { 
 
 }
@@ -127,19 +133,21 @@ uint8_t CTP::startCTP(uint32_t duration)
     uint32_t start = millis();
     uint32_t ms;
 
-    while((ms = millis()) <= start + duration){
+    while((ms = millis()) < start + duration){
         // handle distance messages for half a second
-        handleDistanceMessages(ms + 300);
+        handleDistanceMessages(ms + 500);
 
         // broadcast own distance
         broadcastDistance();
         rf12_sendWait(0);
         
         // if there is time left (should be), continue receiving distance messages
-        handleDistanceMessages(ms + 300);
+        handleDistanceMessages(ms + 500);
     }
 
     if(m_distance >= 50 || m_parent_id == 0){
+        Serial.println(m_distance);
+        Serial.println(m_parent_id);
         return FAIL;
     }
 

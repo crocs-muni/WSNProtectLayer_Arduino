@@ -1,10 +1,11 @@
 APP_NAME=BS_CTPdemo
 
 ifdef DEBUG
-CXX=g++ -g -std=c++11 -pedantic -Wall -Wextra
+#CXX=g++ -g -std=c++11 -pedantic -Wall -Wextra -fno-omit-frame-pointer -static-libstdc++ -static-libasan -fsanitize=address -U_FORTIFY_SOURCE
+CXX=g++ -g -std=c++11 -pedantic -Wall -Wextra -U_FORTIFY_SOURCE
 DEFINES=-DDEBUG -DLINUX_ONLY
 else
-CXX=g++ -std=c++11 -pedantic -Wall -Wextra -o2
+CXX=g++ -std=c++11 -pedantic -Wall -Wextra -o2 -fPIE
 DEFINES=-DLINUX_ONLY
 endif
 

@@ -86,7 +86,7 @@ int openSerialPort(std::string path);   // TODO move from configurator to separa
 
 
 ProtectLayer::ProtectLayer(std::string &slave_path, std::string &key_file):
-m_hash(&m_aes), m_mac(&m_aes), m_keydistrib(key_file), m_crypto(&m_aes, &m_mac, &m_hash, &m_keydistrib)
+m_hash(&m_aes), m_mac(&m_aes), m_keydistrib(key_file), m_crypto(&m_aes, &m_mac, &m_hash, &m_keydistrib), m_node_id(BS_NODE_ID)
 { 
     m_slave_fd = openSerialPort(slave_path);
     if(m_slave_fd < 0){
@@ -128,30 +128,29 @@ uint8_t ProtectLayer::receive(uint8_t *buffer, uint8_t buff_size, uint8_t *recei
     uint8_t rcvd_len = 0;
     uint8_t rcvd_buff[MAX_MSG_SIZE + 10];
 
-    if((rcvd_len = read(m_slave_fd, rcvd_buff, buff_size)) < 1){
+    if((rcvd_len = read(m_slave_fd, (void*) rcvd_buff, MAX_MSG_SIZE)) < SPHEADER_SIZE + m_mac.macSize()){
         return FAIL;
     }
 
-    if(rcvd_len > MAX_MSG_SIZE){
+    if(rcvd_len > MAX_MSG_SIZE){    // cannot happen
         return ERR_BUFFSIZE;
     }
 
-
-    SPHeader_t *header = reinterpret_cast<SPHeader_t*>(rcvd_buff);
+    SPHeader_t *spheader = reinterpret_cast<SPHeader_t*>(rcvd_buff);
     uint8_t rval;
 
-    // if(header->msgType == MSG_FORWARD){
-    //     if((rval = forwardToBS(rcvd_buff, rcvd_len)) == SUCCESS){
-    //         return FORWARD;
-    //     }
-    //     return FAIL;
-    // }
+    printBufferHex(rcvd_buff, rcvd_len);// TODO! REMOVE
 
-    if(header->receiver != BS_NODE_ID){
+    if(spheader->receiver != BS_NODE_ID){
+// TODO! REMOVE
+#ifdef __linux__
+    printf("receiver: %d == %d\n", spheader->receiver, rcvd_buff[2]);
+#endif 
         return FAIL;
     }
 
-    if((rval = m_crypto.unprotectBufferFromNodeB(header->sender, rcvd_buff, (uint8_t) SPHEADER_SIZE, &rcvd_len)) != SUCCESS){
+
+    if((rval = m_crypto.unprotectBufferFromNodeB(spheader->sender, rcvd_buff, (uint8_t) SPHEADER_SIZE, &rcvd_len)) != SUCCESS){
         return FAIL;
     }
 
@@ -166,6 +165,10 @@ uint8_t ProtectLayer::receive(uint8_t *buffer, uint8_t buff_size, uint8_t *recei
     return SUCCESS;
 }
 
+uint8_t ProtectLayer::getNodeID()
+{
+    return BS_NODE_ID;
+}
 
 #else
 #include "RF12.h"
@@ -242,6 +245,10 @@ uint8_t ProtectLayer::sendTo(msg_type_t msg_type, uint8_t receiver, uint8_t *buf
 
 uint8_t ProtectLayer::sendToBS(msg_type_t msg_type, uint8_t *buffer, uint8_t size)
 {
+    if(size > MAX_MSG_SIZE - SPHEADER_SIZE){
+        return FAIL;
+    }
+
     if(msg_type == MSG_APP){
         return sendTo(msg_type, BS_NODE_ID, buffer, size);
     }
@@ -250,13 +257,14 @@ uint8_t ProtectLayer::sendToBS(msg_type_t msg_type, uint8_t *buffer, uint8_t siz
         return FAIL;
     }
 
-    uint8_t msg_buffer[size + SPHEADER_SIZE];
-    uint8_t msg_size = size;
+    uint8_t msg_buffer[MAX_MSG_SIZE];
+    uint8_t msg_size = size + SPHEADER_SIZE;
 
     SPHeader_t *header = reinterpret_cast<SPHeader_t*>(msg_buffer);
     header->msgType = msg_type;
     header->sender = m_node_id;
     header->receiver = BS_NODE_ID;
+    memcpy(msg_buffer + SPHEADER_SIZE, buffer, size);
 
     m_crypto.protectBufferForBSB(msg_buffer, SPHEADER_SIZE, &msg_size);
     
@@ -345,6 +353,10 @@ uint8_t ProtectLayer::receive(uint8_t *buffer, uint8_t buff_size, uint8_t *recei
     return SUCCESS;
 }
 
+uint8_t ProtectLayer::getNodeID()
+{
+    return m_node_id;
+}
 
 #endif
 

@@ -40,6 +40,7 @@ typedef enum _MSG_TYPE {
 } MSG_TYPE;
 
 
+#pragma pack(push, 1)
 /**
 	A structure representing security header
 */
@@ -52,6 +53,8 @@ typedef struct SPHeader {
 //     uint8_t plaintext[PLAINTEXT_BYTES];
 // #endif
 } SPHeader_t;
+
+#pragma pack(pop)
 
 #define SPHEADER_SIZE	sizeof(SPHeader_t)
 

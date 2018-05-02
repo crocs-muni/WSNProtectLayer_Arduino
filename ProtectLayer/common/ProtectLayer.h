@@ -25,7 +25,7 @@
 
 class ProtectLayer {
     uint8_t         m_node_id;  // TODO not set yet
-    uint8_t         m_msg_buffer[MAX_MSG_SIZE];
+    // uint8_t         m_msg_buffer[MAX_MSG_SIZE];
 
     AES             m_aes;
     AEShash         m_hash;
@@ -116,6 +116,8 @@ public:
     uint8_t startCTP();
 
     uint8_t receive(uint8_t *buffer, uint8_t buff_size, uint8_t *received_size);
+
+    uint8_t getNodeID();
 };
 
 #endif //  PROTECTLAYER_H

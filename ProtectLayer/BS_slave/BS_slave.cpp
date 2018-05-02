@@ -14,6 +14,9 @@
 uint8_t node_id = BS_NODE_ID;
 uint8_t header = 0;
 
+uint8_t rcvd_len;
+uint8_t rcvd_hdr;
+uint8_t rcvd_buff[MAX_MSG_SIZE];
 
 void setup()
 {
@@ -68,19 +71,17 @@ void loop()
             return;
         }
 
-        if(buffer[0] == MSG_CTP){
+        if(rf12_data[0] == MSG_CTP){
             return;
         }
 
         // message_len = rf12_len + RF12_HDR_SIZE;
-        uint8_t rcvd_len;
-        uint8_t rcvd_hdr;
-        uint8_t rcvd_buff[MAX_MSG_SIZE];
         // memcpy(message_buffer, rf12_buf, message_len);
         // memcpy(message_buffer, rf12_data, message_len);
         // replyAck();
         // rf12_recvDone();
         copy_rf12_to_buffer();
         Serial.write(rcvd_buff, rcvd_len);
+        Serial.flush();
     }
 }

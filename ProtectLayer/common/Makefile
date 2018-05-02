@@ -5,10 +5,11 @@ SOURCES = $(wildcard *.cpp)
 OBJECTS = $(SOURCES:.cpp=.o)
 
 ifdef DEBUG
-CXX=g++ -g -std=c++11
+#CXX=g++ -g -std=c++11 -fno-omit-frame-pointer -static-libstdc++ -static-libasan -fsanitize=address -U_FORTIFY_SOURCE
+CXX=g++ -g -std=c++11 -fno-omit-frame-pointer -U_FORTIFY_SOURCE
 DEFINES=-DDEBUG=1 -DLINUX_ONLY=1
 else
-CXX=g++ -std=c++11
+CXX=g++ -std=c++11 -fPIC
 DEFINES=-DLINUX_ONLY
 endif
 

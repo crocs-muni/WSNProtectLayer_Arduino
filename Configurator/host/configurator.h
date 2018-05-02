@@ -43,7 +43,7 @@ private:
     bool writeNode(std::ofstream &output_file, const Node &key);
     bool writePairwiseKeys(std::ofstream &output_file);
     bool writeuTESLAKeys(std::ofstream &output_file);
-    bool loadFromFile(const std::string filename);
+    bool loadFromFile(const std::string &filename);
     bool uploadSingle(const Node &node, int node_index);
     bool requestKey(int fd, uint8_t node_id);
 public:
@@ -52,7 +52,7 @@ public:
     // load from file
     // Configurator(std::string &in_filename);
 
-    bool saveToFile(const std::string filename);
+    bool saveToFile(const std::string &filename);
     bool upload();
 
     std::vector<Node> getNodes();

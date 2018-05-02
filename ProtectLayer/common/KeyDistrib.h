@@ -59,6 +59,7 @@ private:
 	std::vector<Node> 		m_nodes;
 	uint8_t 				m_key_size;
 	uint8_t 				m_nodes_num;
+	uint32_t 				m_counters[MAX_NODE_NUM + 1];
 public:
 	KeyDistrib(std::string &filename);
 

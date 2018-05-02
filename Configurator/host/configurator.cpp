@@ -233,7 +233,7 @@ bool Configurator::writeuTESLAKeys(std::ofstream &output_file)
     return true;
 }
 
-bool Configurator::saveToFile(const std::string filename)
+bool Configurator::saveToFile(const std::string &filename)
 {
     std::ofstream output_file(filename, std::ios::binary);
     if(!output_file.is_open()){
@@ -351,7 +351,7 @@ bool Configurator::readuTESLAKeys(std::ifstream &input_file)
     return true;
 }
 
-bool Configurator::loadFromFile(const std::string filename)
+bool Configurator::loadFromFile(const std::string &filename)
 {
     std::ifstream input_file(filename, std::ios::binary);
     if(!input_file.is_open()){
