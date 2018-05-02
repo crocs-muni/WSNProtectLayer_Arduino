@@ -394,18 +394,11 @@ uint8_t Crypto::protectBufferB(PL_key_t* key, uint8_t* buffer, uint8_t offset, u
 
 uint8_t Crypto::unprotectBufferB(PL_key_t* key, uint8_t* buffer, uint8_t offset, uint8_t* pLen)
 {
-    // uint32_t start = millis();
-    // // code
-    // start = millis() - start;
-    // Serial.print("KD");
-    // Serial.println(start);
-
-
     uint8_t status = SUCCESS;
     uint8_t i;
     uint32_t counter = *(key->counter);
-    // uint8_t buffer_copy[*pLen];
-    // memcpy(buffer_copy, buffer, *pLen);
+    uint8_t buffer_copy[*pLen];
+    memcpy(buffer_copy, buffer, *pLen);
 
     if(*pLen < m_mac->macSize()){
         return FAIL;
@@ -442,20 +435,20 @@ uint8_t Crypto::unprotectBufferB(PL_key_t* key, uint8_t* buffer, uint8_t offset,
 
     if((status = verifyMac(key, buffer, 0, pLen)) != SUCCESS){            
         // pl_log_e(TAG, "  unprotectBufferB mac verification failed, trying to sychronize counter.\n"); 
-        // memcpy(buffer, buffer_copy, *pLen);
-        // printBuffer(buffer, *pLen);
         for (i = 1; i <= COUNTER_SYNCHRONIZATION_WINDOW; i++){    
+memcpy(buffer, buffer_copy, *pLen);
+// printBuffer(buffer, *pLen);
             *(key->counter) = counter - i;
-            decryptBufferB(key, buffer, offset, *pLen- m_mac->macSize());
-            // decryptBufferB(key, buffer, offset, *pLen - m_mac->macSize() - SPHEADER_SIZE);
+            decryptBufferB(key, buffer, offset, *pLen - m_mac->macSize());
             if((status = verifyMac(key, buffer, 0, pLen)) == SUCCESS){
                 // pl_log_i(TAG, " counter synchronization succesfull.\n");
                 return status;
             }
     
+memcpy(buffer, buffer_copy, *pLen);
+// printBuffer(buffer, *pLen);
             *(key->counter) = counter + i;
             decryptBufferB(key, buffer, offset, *pLen - m_mac->macSize());
-            // decryptBufferB(key, buffer, offset, *pLen - m_mac->macSize() - SPHEADER_SIZE);
             if((status = verifyMac(key, buffer, 0, pLen)) == SUCCESS){
                 // pl_log_i(TAG, " counter synchronization succesfull.\n");
                 return status;
@@ -465,5 +458,6 @@ uint8_t Crypto::unprotectBufferB(PL_key_t* key, uint8_t* buffer, uint8_t offset,
         *(key->counter) = counter;
         return status;
     }
+    
     return status;
 }
