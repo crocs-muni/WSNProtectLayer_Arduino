@@ -6,12 +6,12 @@ endif
 
 all:
 	$(MAKE) -C common
-	$(MAKE) -C BS_host
 	make DEBUG= -C BS_slave
-	make DEBUG= -C node
+	make DEBUG= -C demo
+	$(MAKE) -C demo_CTP
 
 clean:
 	make -C common clean
-	make -C BS_host clean
 	make -C BS_slave clean
-	make -C node clean
+	make -C demo clean
+	make -C demo_CTP clean

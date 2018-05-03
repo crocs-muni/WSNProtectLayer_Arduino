@@ -1,3 +1,5 @@
+#ifndef __linux__
+
 #include "uTESLAClient.h"
 
 #include <RF12.h>
@@ -135,3 +137,5 @@ bool uTeslaClient::verifyMessage(const uint8_t *data, const uint8_t data_size, u
 
     return verifyMAC(data, data_size - m_mac_size, data + data_size - m_mac_size);
 }
+
+#endif // __linux__

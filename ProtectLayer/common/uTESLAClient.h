@@ -1,6 +1,8 @@
 #ifndef UTESLACLIENT_H
 #define UTESLACLIENT_H
 
+#ifndef __linux__
+
 // #include "types.h"
 #include <Arduino.h>
 #include <EEPROM.h>
@@ -8,6 +10,7 @@
 
 #include "uTESLA.h"
 // #include "AES_crypto.h"
+#include "ProtectLayerGlobals.h"
 
 #define MAX_KEY_SIZE            32  // possible 256-bit output of hash function
 #define MAX_MAC_SIZE            32
@@ -41,9 +44,11 @@ public:
 
     bool updateKey(const uint8_t* new_key_hash);
 
-    // bool verifyNewKey(const uint8_t* new_key_hash);
-
     bool verifyMAC(const uint8_t* data, const uint16_t data_len, const uint8_t* mac);
+
+    bool verifyMessage(const uint8_t *data, const uint8_t data_size, uint8_t includes_header = true);
 };
+
+#endif // __linux__
 
 #endif // UTESLACLIENT_H
