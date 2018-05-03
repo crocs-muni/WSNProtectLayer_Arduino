@@ -3,7 +3,7 @@
 #include <RF12.h>
 
 
-uTeslaClient::uTeslaClient(int16_t eeprom_address, Hash *hash, MAC *mac): m_round(0), m_hash(hash), m_mac(mac)
+uTeslaClient::uTeslaClient(int16_t eeprom_address, Hash *hash, MAC *mac): m_hash(hash), m_mac(mac), m_round(0)
 {
 	for(int i=0;i<hash->hashSize();i++){
 		m_current_key[i] = EEPROM.read(eeprom_address + i);
@@ -14,7 +14,7 @@ uTeslaClient::uTeslaClient(int16_t eeprom_address, Hash *hash, MAC *mac): m_roun
     m_mac_size = mac->macSize();
 }
 
-uTeslaClient::uTeslaClient(const uint8_t* initial_key, Hash *hash, MAC *mac): m_round(0), m_hash(hash), m_mac(mac)
+uTeslaClient::uTeslaClient(const uint8_t* initial_key, Hash *hash, MAC *mac): m_hash(hash), m_mac(mac), m_round(0)
 {
 	memcpy(m_current_key, initial_key, hash->hashSize());
 	m_hash_size = hash->hashSize();
@@ -120,4 +120,18 @@ bool uTeslaClient::verifyMAC(const uint8_t* data, const uint16_t data_len, const
     // delete[] computed_mac;
 
 	return false;
+}
+
+bool uTeslaClient::verifyMessage(const uint8_t *data, const uint8_t data_size, uint8_t includes_header)
+{
+    if(includes_header){
+        const SPHeader_t *spheader = reinterpret_cast<const SPHeader_t*>(data);
+        if(spheader->msgType != MSG_UTESLA || spheader->sender != BS_NODE_ID){
+            return false;
+        }
+
+        return verifyMAC(data + SPHEADER_SIZE, data_size - SPHEADER_SIZE - m_mac_size, data + data_size - m_mac_size);
+    }
+
+    return verifyMAC(data, data_size - m_mac_size, data + data_size - m_mac_size);
 }

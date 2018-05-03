@@ -1,3 +1,5 @@
+#ifdef __linux__
+
 #include "uTESLAMaster.h"
 
 #include <iostream>
@@ -11,6 +13,8 @@
 #include <string.h>
 
 #include "AES_crypto.h"
+#include "ProtectLayerGlobals.h"
+
 
 void printBufferHex(const uint8_t *buffer, const uint32_t len)
 {
@@ -20,6 +24,7 @@ void printBufferHex(const uint8_t *buffer, const uint32_t len)
     printf("\n");
 }
 
+// TODO! move to separate file
 void uTeslaMaster::openSerialPort(std::string &serial_port)
 {
     // open file descriptor
@@ -134,22 +139,25 @@ bool uTeslaMaster::broadcastKey()
 {
     // send it to arduino
     // maybe size twice first
-    int32_t buffer_size = m_hash_size + 3;
+    int32_t buffer_size = m_hash_size + 2 + SPHEADER_SIZE;
     // uint8_t buffer[buffer_size];
-    uint8_t *buffer = new uint8_t[buffer_size];
+    uint8_t buffer[MAX_MSG_SIZE];
 
     buffer[0] = buffer_size - 2;
     buffer[1] = buffer_size - 2;
-    buffer[2] = MSG_TYPE_KEY;
+    // buffer[2] = MSG_TYPE_KEY;
 
-    memcpy(buffer + 3, m_hash_chain[m_current_key_index], m_hash_size);
+    SPHeader_t *spheader = reinterpret_cast<SPHeader_t*>(buffer + 2);
+    spheader->msgType = MSG_UTESLA_KEY;
+    spheader->sender = BS_NODE_ID;
+    spheader->receiver = 0;
+
+    memcpy(buffer + 2 + SPHEADER_SIZE, m_hash_chain[m_current_key_index], m_hash_size);
 
     if(write(m_dev_fd, buffer, buffer_size) < buffer_size){
-        delete[] buffer;
         return false;
     }
 
-    delete[] buffer;
     return true;
 }
 
@@ -172,42 +180,54 @@ bool uTeslaMaster::newRound()
 
 bool uTeslaMaster::broadcastMessage(const uint8_t* data, const uint16_t data_len)
 {
-    if(!data || m_current_key_index < 0){
+    if(!data){
+        printDebug("NULL message to broadcast", true);
+        return false;
+    }
+
+    if(m_current_key_index < 0){
+        printDebug("Out of uTESLA rounds", true);
+        return false;
+    }
+
+    if(data_len > MAX_MSG_SIZE - SPHEADER_SIZE - m_mac_size){
+        printDebug("Data too long", true);
         return false;
     }
 
     // int buffer_size = data_len + m_mac_size + 2;
-    int buffer_size = data_len + m_hash_size + 3;
-    int packet_size = data_len + m_mac_size + 3;
-    uint8_t *buffer = new uint8_t[buffer_size]; // TODO single buffer allocated once
+    int packet_size = data_len + m_mac_size + 2 + SPHEADER_SIZE;
 
+    uint8_t buffer[MAX_MSG_SIZE];
     buffer[0] = packet_size - 2;
     buffer[1] = packet_size - 2;
-    buffer[2] = MSG_TYPE_DATA;
+    
+    SPHeader_t *spheader = reinterpret_cast<SPHeader_t*>(buffer + 2);
+    spheader->msgType = MSG_UTESLA;
+    spheader->sender = BS_NODE_ID;
+    spheader->receiver = 0;
 
-    memcpy(buffer + 3, data, data_len);
+    memcpy(buffer + 2 + SPHEADER_SIZE, data, data_len);
 
-    if(!m_mac->computeMAC(m_hash_chain[m_current_key_index], m_mac_key_size, data, data_len, buffer + 3 + data_len, m_mac_size)){
-        std::cerr << "Failed to compute MAC" << std::endl;
-        delete[] buffer;
+    if(!m_mac->computeMAC(m_hash_chain[m_current_key_index], m_mac_key_size, buffer + 2, data_len + SPHEADER_SIZE, buffer + 2 + SPHEADER_SIZE + data_len, m_mac_size)){
+        printDebug("Failed to compute MAC", true);
+        // std::cerr << "Failed to compute MAC" << std::endl;
         return false;
     }
 
 #ifdef DEBUG
-    std::cout << std::dec << "Writing " << packet_size << " (" << data_len << " + " << m_mac_size <<") " << "bytes to serial port:" << std::endl;
+    std::cout << std::dec << "Writing " << packet_size //<< " (" << data_len << " + " << m_mac_size <<") "
+     << " bytes to serial port:" << std::endl;
     printBufferHex(buffer, packet_size);
 #endif // DEBUG
 
     if(write(m_dev_fd, buffer, packet_size) < packet_size){
-        std::cerr << "Failed to broadcast message" << std::endl;
-        delete[] buffer;
+        printDebug("Failed to broadcast message", true);
+        // std::cerr << "Failed to broadcast message" << std::endl;
         return false;
     }
-
-    delete[] buffer;
 
     return true;
 }
 
-
-
+#endif // __linux__

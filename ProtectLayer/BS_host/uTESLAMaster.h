@@ -1,6 +1,10 @@
 #ifndef UTESLAMASTER_H
 #define UTESLAMASTER_H
 
+// TODO! move uTESLAMaster.* to common, delete BS_host
+
+#ifdef __linux__
+
 #include <vector>
 #include <string>
 
@@ -62,5 +66,7 @@ public:
     uTeslaMasterException(const char *msg): m_msg(msg) {}
     std::string what(){ return m_msg; }
 };
+
+#endif  // __linux__
 
 #endif // UTESLAMASTER_H

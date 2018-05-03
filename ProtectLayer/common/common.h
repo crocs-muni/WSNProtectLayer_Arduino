@@ -80,7 +80,10 @@ void sendWait(char* message, uint8_t length, uint8_t header, unsigned int end);
 void printError(int err_num);
 
 int freeRam();
+
 #else
+
+void printDebug(const char *msg, bool is_error = false);
 
 uint64_t millis();
 

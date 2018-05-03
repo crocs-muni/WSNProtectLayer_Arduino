@@ -98,7 +98,19 @@ int freeRam() {
 
 
 #else
+#include <iostream>
 #include <sys/timeb.h>
+
+void printDebug(const char*msg, bool is_error)
+{
+#ifdef DEBUG
+    if(is_error){
+        std::cerr << msg << std::endl;
+    } else {
+        std::cout << msg << std::endl;
+    }
+#endif
+}
 
 uint64_t millis(){
     timeb tb;

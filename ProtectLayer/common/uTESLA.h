@@ -3,9 +3,10 @@
 
 #include "common.h"
 
-#define MSG_TYPE_DATA   3
-#define MSG_TYPE_KEY    4
+// #define MSG_TYPE_DATA   3
+// #define MSG_TYPE_KEY    4
 
+// TODO! move everything to ProtextLayerGlobals.h
 
 class Hash {
 public:

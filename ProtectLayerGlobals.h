@@ -35,7 +35,8 @@ typedef enum _MSG_TYPE {
 	MSG_ROUTE,	/**< message of routing component */
 	MSG_FORWARD, /**< message to be forwarded to BS */
     MSG_CTP,    /**< CTP distance message */
-	MSG_BRDCST,	/**< uTESLA broadcast message */
+	MSG_UTESLA,	/**< uTESLA broadcast message */
+	MSG_UTESLA_KEY,	/**< uTESLA key announcement message */
 	MSG_COUNT   /**< number of message types */
 } MSG_TYPE;
 

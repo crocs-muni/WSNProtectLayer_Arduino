@@ -33,3 +33,4 @@ $(LIBNAME): $(OBJECTS)
 clean:
 	rm -vf *.o
 	rm -vf $(LIBNAME)
+	make -C AES/ clean
