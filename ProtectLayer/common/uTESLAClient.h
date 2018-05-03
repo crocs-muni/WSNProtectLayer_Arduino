@@ -41,7 +41,7 @@ public:
 
     uint8_t getKeySize();
 
-    uint8_t updateKey(const uint8_t* new_key_hash);
+    uint8_t updateKey(const uint8_t* new_key);
 
     uint8_t verifyMAC(const uint8_t* data, const uint16_t data_len, const uint8_t* mac);
 
