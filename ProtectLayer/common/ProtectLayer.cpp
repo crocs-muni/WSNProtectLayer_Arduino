@@ -39,10 +39,19 @@ ProtectLayer::~ProtectLayer()
     }
 }
 
+uint8_t ProtectLayer::broadcastMessage(uint8_t *buffer, uint8_t size)
+{
+    return m_utesla->broadcastMessage(buffer, size);
+}
+
+uint8_t ProtectLayer::broadcastKey()
+{
+    return m_utesla->newRound();
+}
 
 uint8_t ProtectLayer::startCTP()
 {
-    m_ctp.startCTP(CTP_DURATION_MS);
+    return m_ctp.startCTP(CTP_DURATION_MS);
 }
 
 uint8_t ProtectLayer::sendTo(msg_type_t msg_type, uint8_t receiver, uint8_t *buffer, uint8_t size)
@@ -68,13 +77,11 @@ uint8_t ProtectLayer::receive(uint8_t *buffer, uint8_t buff_size, uint8_t *recei
     SPHeader_t *spheader = reinterpret_cast<SPHeader_t*>(rcvd_buff);
     uint8_t rval;
 
+#ifdef DEBUG
     printBufferHex(rcvd_buff, rcvd_len);// TODO! REMOVE
+#endif
 
     if(spheader->receiver != BS_NODE_ID){
-// TODO! REMOVE
-#ifdef __linux__
-    printf("receiver: %d == %d\n", spheader->receiver, rcvd_buff[2]);
-#endif 
         return FAIL;
     }
 
@@ -106,7 +113,7 @@ uint8_t ProtectLayer::getNodeID()
 #ifdef ENABLE_UTESLA
 // initialize also uTESLA
 ProtectLayer::ProtectLayer():
-m_hash(&m_aes), m_mac(&m_aes), m_crypto(&m_aes, &m_mac, &m_hash, &m_keydistrib), m_utesla((int16_t) 0x1F4, &m_hash, &m_mac)
+m_hash(&m_aes), m_mac(&m_aes), m_crypto(&m_aes, &m_mac, &m_hash, &m_keydistrib), m_utesla((int8_t*) 0x1F4, &m_hash, &m_mac)
 #else
 // do not initialize uTESLA
 ProtectLayer::ProtectLayer():
@@ -115,6 +122,7 @@ m_hash(&m_aes), m_mac(&m_aes), m_crypto(&m_aes, &m_mac, &m_hash, &m_keydistrib)
 {
     Serial.begin(BAUD_RATE);
 
+    memset(m_received, 0, 2);
     m_node_id = eeprom_read_byte(0);
     m_ctp.setNodeID(m_node_id);
 
@@ -216,6 +224,23 @@ uint8_t ProtectLayer::forwardToBS(uint8_t *buffer, uint8_t size)
     return SUCCESS;
 }
 
+uint8_t ProtectLayer::forwarduTESLA(uint8_t *buffer, uint8_t size)
+{
+    // // TODO! REMOVE
+    // Serial.print(m_node_id);
+    // Serial.print(" : ");
+    // Serial.print((int) freeRam());
+    // Serial.print(" : ");
+    // printBuffer(buffer, size);
+
+    // does not work if they all resend it at once
+    delay(m_node_id * 20);
+
+    uint8_t rf12_header = createHeader(m_node_id, MODE_SRC, DEFAULT_REQ_ACK);
+    rf12_sendNow(rf12_header, buffer, size);
+    
+    return SUCCESS;
+}
 
 uint8_t ProtectLayer::receive(uint8_t *buffer, uint8_t buff_size, uint8_t *received_size)
 {
@@ -224,8 +249,6 @@ uint8_t ProtectLayer::receive(uint8_t *buffer, uint8_t buff_size, uint8_t *recei
 
 uint8_t ProtectLayer::receive(uint8_t *buffer, uint8_t buff_size, uint8_t *received_size, uint16_t timeout)
 {
-    // uint32_t now = millis();
-    
     if(!timeout){
         timeout = 1;
     }
@@ -259,6 +282,55 @@ uint8_t ProtectLayer::receive(uint8_t *buffer, uint8_t buff_size, uint8_t *recei
         return FAIL;
     }
 
+    if(header->msgType == MSG_UTESLA){
+        // if(m_utesla.verifyMessage(rcvd_buff + SPHEADER_SIZE, rcvd_len - SPHEADER_SIZE, false) != SUCCESS){
+        //     return FAIL;
+        // }
+
+        // ignore already received message
+        if(rcvd_buff[16] == m_received[0]){
+            return FAIL;
+        }
+        m_received[0] = rcvd_buff[16];
+
+        // not verifying anything, the key has not arrived yet
+        // forward, return SUCCESS and verify in app
+
+        if(forwarduTESLA(rcvd_buff, rcvd_len) != SUCCESS){
+            return FAIL;
+        }
+
+        memcpy(buffer, rcvd_buff, rcvd_len);
+        *received_size = rcvd_len;
+
+        return SUCCESS;
+    }
+
+    if(header->msgType == MSG_UTESLA_KEY){
+        if(rcvd_len  != SPHEADER_SIZE + m_mac.macSize()){
+            return FAIL;
+        }
+
+        // ignore already received key
+        if(rcvd_buff[16] == m_received[1]){
+            return FAIL;
+        }
+
+        if(m_utesla.updateKey(rcvd_buff + SPHEADER_SIZE) != SUCCESS){
+            return FAIL;
+        }
+        m_received[1] = rcvd_buff[16];
+
+        if(forwarduTESLA(rcvd_buff, rcvd_len) != SUCCESS){
+            return FAIL;
+        }
+
+        memcpy(buffer, rcvd_buff, rcvd_len);
+        *received_size = rcvd_len;
+
+        return FORWARD;
+    }
+
     // TODO! handle uTESLA
 
     if(header->sender == BS_NODE_ID){
@@ -285,6 +357,11 @@ uint8_t ProtectLayer::receive(uint8_t *buffer, uint8_t buff_size, uint8_t *recei
 uint8_t ProtectLayer::getNodeID()
 {
     return m_node_id;
+}
+
+uint8_t ProtectLayer::verifyMessage(uint8_t *data, uint8_t data_size)
+{
+    return m_utesla.verifyMessage(data, data_size);
 }
 
 #endif

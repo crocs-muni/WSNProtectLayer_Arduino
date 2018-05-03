@@ -8,7 +8,7 @@
 
 #define ENABLE_UTESLA   1   // TODO move to Makefile
 
-// #undef __linux__ // TODO!!! REMOVE - just for VS Code syntax highliting
+// #undef __linux__ // TODO! REMOVE - just for VS Code syntax highliting
 
 #ifdef __linux__
 
@@ -24,7 +24,8 @@
 #endif
 
 class ProtectLayer {
-    uint8_t         m_node_id;  // TODO not set yet
+private:
+    uint8_t         m_node_id;
     // uint8_t         m_msg_buffer[MAX_MSG_SIZE];
 
     AES             m_aes;
@@ -35,10 +36,14 @@ class ProtectLayer {
 
     CTP             m_ctp;
 
+    uint8_t         m_received[2];  // one byte of last received MAC or key - not to rebroadcast already rebroadcasted message or key
+                                    // TODO use sequence number or something
+
 #ifdef __linux__
     uTeslaMaster    *m_utesla;
     int             m_slave_fd;
 #else
+    uint8_t forwarduTESLA(uint8_t *buffer, uint8_t size);
 #ifdef ENABLE_UTESLA
     uTeslaClient    m_utesla;
 #endif
@@ -49,7 +54,8 @@ public:
     ProtectLayer(std::string &slave_path, std::string &key_file);    // throws runtime_error if there is a problem with key file
     virtual ~ProtectLayer();
 
-    uint8_t broadcastMessage(uint8_t *buffer, uint8_t size);    // TODO not implemented yet
+    uint8_t broadcastMessage(uint8_t *buffer, uint8_t size);
+    uint8_t broadcastKey();
     uint8_t sendTo(msg_type_t msg_type, uint8_t receiver, uint8_t *buffer, uint8_t size); // TODO not implemented yet
 #else
 
@@ -110,7 +116,9 @@ public:
      */
     uint8_t receive(uint8_t *buffer, uint8_t buff_size, uint8_t *received_size, uint16_t timeout);
 
-    uint8_t discoverNeighbors();
+    uint8_t verifyMessage(uint8_t *data, uint8_t data_size);
+
+    uint8_t discoverNeighbors();    // TODO! implement
 #endif
 
     uint8_t startCTP();

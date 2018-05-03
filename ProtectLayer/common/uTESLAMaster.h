@@ -44,18 +44,18 @@ private:
 
 
     void openSerialPort(std::string &serial_port);
-    bool broadcastKey();
+    uint8_t broadcastKey();
 
 public:
     uTeslaMaster(std::string &serial_port, const uint8_t *initial_key, const uint32_t rounds_num, Hash *hash, MAC *mac);
     uTeslaMaster(const int32_t device_fd, const uint8_t *initial_key, const uint32_t rounds_num, Hash *hash, MAC *mac);
     virtual ~uTeslaMaster();
 
-    bool newRound();
+    uint8_t newRound();
 
     void printLastElementHex();
 
-    bool broadcastMessage(const uint8_t* data, const uint16_t data_len);
+    uint8_t broadcastMessage(const uint8_t* data, const uint16_t data_len);
 };
 
 class uTeslaMasterException: public std::exception {

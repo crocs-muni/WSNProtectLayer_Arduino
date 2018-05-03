@@ -74,9 +74,9 @@ uTeslaMaster::uTeslaMaster(std::string &serial_port, const uint8_t *initial_key,
     m_hash_chain[0] = new uint8_t[m_hash_size];
     memcpy(m_hash_chain[0], initial_key, m_hash_size);
 
-#ifdef DEBUG
-    std::cout << "Hash chain:" << std::endl;
-#endif
+// #ifdef DEBUG
+//     std::cout << "Hash chain:" << std::endl;
+// #endif
     
     for(uint32_t i=1;i<rounds_num + 1;i++){
         m_hash_chain[i] = new uint8_t[m_hash_size];
@@ -85,9 +85,9 @@ uTeslaMaster::uTeslaMaster(std::string &serial_port, const uint8_t *initial_key,
             uTeslaMasterException ex("Failed to initialize hash chain");
             throw ex;
         }
-#ifdef DEBUG
-        printBufferHex(m_hash_chain[i], m_hash_size);// << std::endl;
-#endif
+// #ifdef DEBUG
+//         printBufferHex(m_hash_chain[i], m_hash_size);// << std::endl;
+// #endif
     }
 
     openSerialPort(serial_port);
@@ -106,9 +106,9 @@ uTeslaMaster::uTeslaMaster(const int32_t device_fd, const uint8_t *initial_key, 
     m_hash_chain[0] = new uint8_t[m_hash_size];
     memcpy(m_hash_chain[0], initial_key, m_hash_size);
 
-//#ifdef DEBUG
+// #ifdef DEBUG
 //    std::cout << "Hash chain:" << std::endl;
-//#endif
+// #endif
     for(uint32_t i=1;i<rounds_num + 1;i++){
         m_hash_chain[i] = new uint8_t[m_hash_size];
         if(!m_hash->hash(m_hash_chain[i-1], m_hash_size, m_hash_chain[i], m_hash_size)){
@@ -116,9 +116,9 @@ uTeslaMaster::uTeslaMaster(const int32_t device_fd, const uint8_t *initial_key, 
             uTeslaMasterException ex("Failed to initialize hash chain");
             throw ex;
         }
-//#ifdef DEBUG
+// #ifdef DEBUG
 //        printBufferHex(m_hash_chain[i], m_hash_size);// << std::endl;
-//#endif
+// #endif
     }
 
 }
@@ -135,7 +135,7 @@ void uTeslaMaster::printLastElementHex()
     printBufferHex(m_hash_chain[m_rounds_num], m_hash_size);
 }
 
-bool uTeslaMaster::broadcastKey()
+uint8_t uTeslaMaster::broadcastKey()
 {
     // send it to arduino
     // maybe size twice first
@@ -155,44 +155,44 @@ bool uTeslaMaster::broadcastKey()
     memcpy(buffer + 2 + SPHEADER_SIZE, m_hash_chain[m_current_key_index], m_hash_size);
 
     if(write(m_dev_fd, buffer, buffer_size) < buffer_size){
-        return false;
+        return FAIL;
     }
 
-    return true;
+    return SUCCESS;
 }
 
-bool uTeslaMaster::newRound()
+uint8_t uTeslaMaster::newRound()
 {
     if(m_current_key_index < 0){
         std::cerr << "Key index"  << std::endl; // TODO REMOVE!
-        return false;
+        return FAIL;
     }
 
-    if(!broadcastKey()){
+    if(broadcastKey() != SUCCESS){
         std::cerr << "broadcast"  << std::endl; // TODO REMOVE!
-        return false;
+        return FAIL;
     }
 
     m_current_key_index--;
 
-    return true;
+    return SUCCESS;
 }
 
-bool uTeslaMaster::broadcastMessage(const uint8_t* data, const uint16_t data_len)
+uint8_t uTeslaMaster::broadcastMessage(const uint8_t* data, const uint16_t data_len)
 {
     if(!data){
         printDebug("NULL message to broadcast", true);
-        return false;
+        return FAIL;
     }
 
     if(m_current_key_index < 0){
         printDebug("Out of uTESLA rounds", true);
-        return false;
+        return FAIL;
     }
 
     if(data_len > MAX_MSG_SIZE - SPHEADER_SIZE - m_mac_size){
         printDebug("Data too long", true);
-        return false;
+        return FAIL;
     }
 
     // int buffer_size = data_len + m_mac_size + 2;
@@ -212,22 +212,16 @@ bool uTeslaMaster::broadcastMessage(const uint8_t* data, const uint16_t data_len
     if(!m_mac->computeMAC(m_hash_chain[m_current_key_index], m_mac_key_size, buffer + 2, data_len + SPHEADER_SIZE, buffer + 2 + SPHEADER_SIZE + data_len, m_mac_size)){
         printDebug("Failed to compute MAC", true);
         // std::cerr << "Failed to compute MAC" << std::endl;
-        return false;
+        return FAIL;
     }
-
-#ifdef DEBUG
-    std::cout << std::dec << "Writing " << packet_size //<< " (" << data_len << " + " << m_mac_size <<") "
-     << " bytes to serial port:" << std::endl;
-    printBufferHex(buffer, packet_size);
-#endif // DEBUG
 
     if(write(m_dev_fd, buffer, packet_size) < packet_size){
         printDebug("Failed to broadcast message", true);
         // std::cerr << "Failed to broadcast message" << std::endl;
-        return false;
+        return FAIL;
     }
 
-    return true;
+    return SUCCESS;
 }
 
 #endif // __linux__

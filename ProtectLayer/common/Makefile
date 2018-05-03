@@ -27,7 +27,6 @@ $(LIBAES):
 	$(CXX) -c $(INCDIRS) $(LIBDIRS) $(DEFINES) $< -o $@
 
 $(LIBNAME): $(OBJECTS)
-	#$(CXX) -c $(INCDIRS) $(LIBDIRS) $(DEFINES) uTESLAMaster.cpp -o uTESLAMaster.o
 	ar rcs $(LIBNAME) $(OBJECTS)
 
 clean:

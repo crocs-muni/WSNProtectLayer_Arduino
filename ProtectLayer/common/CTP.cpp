@@ -67,7 +67,7 @@ uint8_t CTP::startCTP(uint32_t duration)
 #include "RF12.h"
 
 CTP::CTP(): 
-m_parent_id(0), m_distance(50), m_req_ack(DEFAULT_REQ_ACK), m_node_id(0)
+m_node_id(0), m_parent_id(0), m_distance(INVALID_DISTANCE), m_req_ack(DEFAULT_REQ_ACK)
 { 
 
 }
@@ -115,6 +115,9 @@ void CTP::handleDistanceMessages(uint32_t end)
 
 // broadcasts it's distance from BS
 void CTP::broadcastDistance(){
+    if(m_distance == 50){   // TODO use define
+        return;
+    }
     uint8_t buffer[sizeof(SPHeader_t) + 1];
     SPHeader_t *header = reinterpret_cast<SPHeader_t*>(buffer);
     header->msgType = MSG_CTP;
@@ -145,7 +148,7 @@ uint8_t CTP::startCTP(uint32_t duration)
         handleDistanceMessages(ms + 500);
     }
 
-    if(m_distance >= 50 || m_parent_id == 0){
+    if(m_distance >= INVALID_DISTANCE || m_parent_id == 0){
         Serial.println(m_distance);
         Serial.println(m_parent_id);
         return FAIL;
