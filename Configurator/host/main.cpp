@@ -36,7 +36,8 @@ int main(int argc, char **argv)
     bool    upload      = false;
     int     uTESLA_rnds = 0;
 
-    while ((c = getopt (argc, argv, "g:k:l:s:ur:h")) != -1){
+    // while ((c = getopt (argc, argv, "g:k:l:s:ur:h")) != 0xFF /*-1 on x86, 255 on ARM - unsigned*/){
+    while ((c = getopt (argc, argv, "g:k:l:s:ur:h")) != -1 && c != 255){
         switch (c){
         case 'g':
             generate = true;
