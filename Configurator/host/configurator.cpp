@@ -342,7 +342,7 @@ bool Configurator::readuTESLAKeys(std::ifstream &input_file)
         return false;
     }
 
-    input_file.read(reinterpret_cast<char*>(m_uTESLA_key), m_key_size);
+    input_file.read(reinterpret_cast<char*>(m_uTESLA_last_element), m_key_size);
     if(input_file.fail()){
         std::cerr << "Failed to read last uTESLA key" << std::endl;
         return false;
