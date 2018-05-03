@@ -72,10 +72,7 @@ void printPacket(uint8_t packet_hdr, uint8_t packet_len, uint8_t *packet_data);
 // waits until (device is running for) 'end' milliseconds
 // or receives packet - whichever is sooner
 // returns true if packet was received or false otherwise
-bool waitReceive(unsigned long end);
-
-// if sending doesn't take enough, waits for the rest of required time
-void sendWait(char* message, uint8_t length, uint8_t header, unsigned int end);
+bool waitReceive(uint32_t end);
 
 void printError(int err_num);
 

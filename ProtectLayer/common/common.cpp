@@ -70,18 +70,6 @@ bool waitReceive(uint32_t end)
     return false;   // unreachable
 }
 
-void sendWait(char* message, uint8_t length, uint8_t header, unsigned int end)
-{
-    Serial.print("Sending message: ");
-    Serial.println(message);
-    unsigned time_to_wait;
-    rf12_sendNow(header, message, length);
-    rf12_sendWait(0);
-    if((time_to_wait = end - millis()) > 0){
-        delay(time_to_wait);    
-    }
-}
-
 void printError(int err_num)
 {
     // Serial.print(ERROR_MESSAGE);

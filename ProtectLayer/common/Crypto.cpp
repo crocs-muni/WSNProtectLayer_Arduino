@@ -4,7 +4,7 @@
 
 
 Crypto::Crypto(Cipher *cipher, MAC *mac, Hash *hash, KeyDistrib *keydistrib):
-m_cipher(cipher), m_mac(mac), m_hash(hash), m_keydistrib(keydistrib), m_exp(expanded_key), m_key1(NULL)
+m_cipher(cipher), m_mac(mac), m_hash(hash), m_keydistrib(keydistrib), m_key1(NULL), m_exp(expanded_key)
 {
 
 }
@@ -365,27 +365,11 @@ uint8_t Crypto::protectBufferB(PL_key_t* key, uint8_t* buffer, uint8_t offset, u
         // pl_printf("CryptoP:  protectBufferForBSB mac failed.\n");
         return status;
     }
-// TODO! REMOVE
-#ifndef __linux__
-    Serial.print("MAC ");
-    printBuffer(buffer, *pLen + 16);
-    // Serial.print("K: ");
-    // printBuffer(key->keyValue, 16);
-#endif //  __linux__
 
     if((status = encryptBufferB(key, buffer, offset, *pLen)) != SUCCESS){
         // pl_printf("CryptoP:  protectBufferForBSB encrypt failed.\n");
         return status;		
     }
-
-// TODO! REMOVE
-#ifndef __linux__
-    Serial.print("ENC ");
-    printBuffer(buffer, *pLen + 16);
-    // Serial.print("K: ");
-    // printBuffer(key->keyValue, 16);
-#endif //  __linux__
-
 
     *pLen += m_mac->macSize();   // TODO correct?
     
@@ -397,7 +381,12 @@ uint8_t Crypto::unprotectBufferB(PL_key_t* key, uint8_t* buffer, uint8_t offset,
     uint8_t status = SUCCESS;
     uint8_t i;
     uint32_t counter = *(key->counter);
-    uint8_t buffer_copy[*pLen];
+    uint8_t buffer_copy[MAX_MSG_SIZE];
+
+    if(*pLen > MAX_MSG_SIZE){
+        return FAIL;
+    }
+
     memcpy(buffer_copy, buffer, *pLen);
 
     if(*pLen < m_mac->macSize()){
@@ -415,23 +404,6 @@ uint8_t Crypto::unprotectBufferB(PL_key_t* key, uint8_t* buffer, uint8_t offset,
         // pl_log_e(TAG, "  unprotectBufferB encrypt failed.\n");
         return status;
     }
-
-// // TODO! REMOVE
-// #ifndef __linux__
-//     Serial.print(">>");
-//     printBuffer(buffer, *pLen);
-// #endif //  __linux__
-
-#ifdef __linux__
-        printf(">>");
-        for(int i =0;i<*pLen;i++){
-            printf("%02X ", buffer[i]);
-        }
-        printf("\n");
-        // printf("C: %u\n", *key->counter);
-        // printf("\n");
-
-#endif
 
     if((status = verifyMac(key, buffer, 0, pLen)) != SUCCESS){            
         // pl_log_e(TAG, "  unprotectBufferB mac verification failed, trying to sychronize counter.\n"); 

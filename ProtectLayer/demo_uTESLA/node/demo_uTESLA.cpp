@@ -24,6 +24,18 @@ void setup()
     Serial.begin(BAUD_RATE);
 
     node_id = protect_layer.getNodeID();
+    protect_layer.discoverNeighbors();
+
+    uint32_t neighbors = protect_layer.getNeighbors();
+
+    Serial.println("Neighbors:");
+    for(int i=0; i < 32; i++){
+        if(bitIsSet(neighbors, i)){
+            Serial.print(i);
+            Serial.print(" ");
+        }
+    }
+    Serial.println();
 }
 
 void loop()

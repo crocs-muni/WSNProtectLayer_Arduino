@@ -26,7 +26,6 @@
 class ProtectLayer {
 private:
     uint8_t         m_node_id;
-    // uint8_t         m_msg_buffer[MAX_MSG_SIZE];
 
     AES             m_aes;
     AEShash         m_hash;
@@ -43,7 +42,11 @@ private:
     uTeslaMaster    *m_utesla;
     int             m_slave_fd;
 #else
+    uint32_t        m_neighbors;    // available only after neighbor discovery
+
     uint8_t forwarduTESLA(uint8_t *buffer, uint8_t size);
+    uint8_t neighborHandshake(uint8_t node_id);
+    uint8_t neighborHandshakeResponse();
 #ifdef ENABLE_UTESLA
     uTeslaClient    m_utesla;
 #endif
@@ -118,7 +121,7 @@ public:
 
     uint8_t verifyMessage(uint8_t *data, uint8_t data_size);
 
-    uint8_t discoverNeighbors();    // TODO! implement
+    uint8_t discoverNeighbors();
 #endif
 
     uint8_t startCTP();
@@ -126,6 +129,8 @@ public:
     uint8_t receive(uint8_t *buffer, uint8_t buff_size, uint8_t *received_size);
 
     uint8_t getNodeID();
+
+    uint32_t getNeighbors();
 };
 
 #endif //  PROTECTLAYER_H

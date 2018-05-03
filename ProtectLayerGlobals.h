@@ -9,7 +9,12 @@
 
 #define CTP_DURATION_MS         10000
 #define CTP_REBROADCASTS_NUM    5
-#define CTP_REBROADCASTS_DELAY	500
+#define CTP_REBROADCASTS_DELAY  500
+
+#define DISC_REBROADCASRS_NUM	3
+#define DISC_REBROADCASTS_DELAY	300
+#define DISC_NEIGHBOR_RSP_TIME	50
+#define DISC_ROUNDS_NUM			4
 
 #define DEFAULT_REQ_ACK         0
 
@@ -53,13 +58,16 @@ typedef struct SPHeader {
 //     uint8_t privacyLevelIndicator;	/**< MSb is used as a flag for Phantom routing, other bits indicate privacy level applied */
     uint8_t     sender;	/**< sender ID */
     uint8_t     receiver; /**< receiver ID */
-// #ifdef PLAINTEXT_DEMO
-//     uint8_t plaintext[PLAINTEXT_BYTES];
-// #endif
 } SPHeader_t;
 
 #pragma pack(pop)
 
 #define SPHEADER_SIZE	sizeof(SPHeader_t)
+
+
+#define setBit(variable, bit) variable |= (1 << bit)
+#define bitIsSet(variable, bit) variable & (1 << bit)
+
+
 
 #endif //  PROTECTLAYERGLOBALS_H

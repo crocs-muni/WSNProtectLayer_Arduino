@@ -150,7 +150,7 @@ uint8_t ProtectLayer::getNodeID()
 #ifdef ENABLE_UTESLA
 // initialize also uTESLA
 ProtectLayer::ProtectLayer():
-m_hash(&m_aes), m_mac(&m_aes), m_crypto(&m_aes, &m_mac, &m_hash, &m_keydistrib), m_utesla((int8_t*) 0x1F4, &m_hash, &m_mac)
+m_hash(&m_aes), m_mac(&m_aes), m_crypto(&m_aes, &m_mac, &m_hash, &m_keydistrib), m_neighbors(0), m_utesla((int8_t*) 0x1F4, &m_hash, &m_mac)
 #else
 // do not initialize uTESLA
 ProtectLayer::ProtectLayer():
@@ -263,13 +263,6 @@ uint8_t ProtectLayer::forwardToBS(uint8_t *buffer, uint8_t size)
 
 uint8_t ProtectLayer::forwarduTESLA(uint8_t *buffer, uint8_t size)
 {
-    // // TODO! REMOVE
-    // Serial.print(m_node_id);
-    // Serial.print(" : ");
-    // Serial.print((int) freeRam());
-    // Serial.print(" : ");
-    // printBuffer(buffer, size);
-
     // does not work if they all resend it at once
     delay(m_node_id * 20);
 
@@ -298,12 +291,12 @@ uint8_t ProtectLayer::receive(uint8_t *buffer, uint8_t buff_size, uint8_t *recei
         return ERR_BUFFSIZE;
     }
 
-    uint8_t rcvd_hdr;
+    uint8_t rcvd_hdr;   // just to use macro copy_rf12_to_buffer
     uint8_t rcvd_len;
     uint8_t rcvd_buff[MAX_MSG_SIZE];
 
     copy_rf12_to_buffer();
-
+    (void)rcvd_hdr; // unused
 
     SPHeader_t *header = reinterpret_cast<SPHeader_t*>(rcvd_buff);
     uint8_t rval;
@@ -399,6 +392,172 @@ uint8_t ProtectLayer::getNodeID()
 uint8_t ProtectLayer::verifyMessage(uint8_t *data, uint8_t data_size)
 {
     return m_utesla.verifyMessage(data, data_size);
+}
+
+uint8_t ProtectLayer::neighborHandshake(uint8_t node_id)
+{
+    uint8_t msg_buffer[MAX_MSG_SIZE];
+    uint8_t msg_size = SPHEADER_SIZE + 4;
+    uint8_t rf12_header = createHeader(node_id, MODE_DST, DEFAULT_REQ_ACK);
+    volatile SPHeader_t *spheader = reinterpret_cast<SPHeader_t*>(msg_buffer);
+
+    spheader->msgType = MSG_DISC;
+    spheader->sender = m_node_id;
+    spheader->receiver = node_id;
+
+    uint32_t nonce = random(/*0xFFFFFFFF*/);
+    memcpy(msg_buffer + SPHEADER_SIZE, &nonce, 4);
+
+    if(m_crypto.protectBufferForNodeB(node_id, msg_buffer, SPHEADER_SIZE, &msg_size) != SUCCESS){
+        return FAIL;
+    }
+
+    rf12_sendNow(rf12_header, msg_buffer, msg_size);
+
+    uint32_t start = millis();
+    while(waitReceive(start + DISC_NEIGHBOR_RSP_TIME)){
+        spheader = reinterpret_cast<volatile SPHeader_t*>(rf12_data);
+        if(spheader->msgType != MSG_DISC || spheader->sender != node_id){
+            continue;
+        }
+
+        memcpy(msg_buffer, rf12_data, rf12_len);
+        msg_size = rf12_len;
+        rf12_recvDone();
+
+        if(m_crypto.unprotectBufferFromNodeB(node_id, msg_buffer, SPHEADER_SIZE, &msg_size) != SUCCESS){
+            continue;
+        }
+        
+
+        if(msg_size < SPHEADER_SIZE + 4){
+            continue;
+        }
+
+        nonce++;
+        if(memcmp(&nonce, msg_buffer + SPHEADER_SIZE, 4)){
+            continue;
+        }
+        
+        setBit(m_neighbors, node_id);
+    }
+
+    return SUCCESS;
+}
+
+uint8_t ProtectLayer::neighborHandshakeResponse()
+{
+    if(rf12_len < SPHEADER_SIZE + 4){
+        return FAIL;
+    }
+
+    // data must already be in rf12_buff!!!!!
+    uint8_t msg_buffer[MAX_MSG_SIZE];
+    uint8_t msg_size = SPHEADER_SIZE + 4;
+
+    memcpy(msg_buffer, rf12_data, rf12_len);
+    msg_size = rf12_len;
+    rf12_recvDone();
+
+    SPHeader_t *spheader = reinterpret_cast<SPHeader_t*>(msg_buffer);
+
+    if(spheader->msgType != MSG_DISC || spheader->receiver != m_node_id){
+        return FAIL;
+    }
+
+    uint8_t other_id = spheader->sender;
+    uint8_t rf12_header = createHeader(other_id, MODE_DST, DEFAULT_REQ_ACK);
+
+    if(m_crypto.unprotectBufferFromNodeB(other_id, msg_buffer, SPHEADER_SIZE, &msg_size) != SUCCESS){
+        return FAIL;
+    }
+    msg_size -= m_mac.macSize();
+
+    uint32_t *nonce = reinterpret_cast<uint32_t*>(msg_buffer + SPHEADER_SIZE);
+    (*nonce)++;
+
+    spheader->sender = m_node_id;
+    spheader->receiver = other_id;
+
+    if(m_crypto.protectBufferForNodeB(other_id, msg_buffer, SPHEADER_SIZE, &msg_size) != SUCCESS){
+        return FAIL;
+    }
+
+    rf12_sendNow(rf12_header, msg_buffer, msg_size);
+
+    return SUCCESS;
+}
+
+
+uint8_t ProtectLayer::discoverNeighbors()
+{
+    randomSeed(analogRead(0));  // TODO better source of entropy
+    uint32_t start = 0;
+
+    // uint8_t msg_buffer[MAX_MSG_SIZE];
+    uint8_t rf12_header = createHeader(m_node_id, MODE_SRC, DEFAULT_REQ_ACK);
+    SPHeader_t spheader;// = reinterpret_cast<SPHeader_t*>(msg_buffer);
+
+    spheader.msgType = MSG_DISC;
+    spheader.sender = m_node_id;
+    spheader.receiver = 0;
+
+    delay(m_node_id * 10);    // pure heuristics
+
+    // each bit means possible neighbor has/hasn't announce their presence
+    uint32_t announced = 0;
+    volatile SPHeader_t *rcvd_spheader = reinterpret_cast<volatile SPHeader_t*>(rf12_data);
+
+    // broadcast ID in plaintext and mark nodes that messages came from
+    for(int i=0;i<DISC_REBROADCASRS_NUM;i++){
+        start = millis();
+        // trying to randomize it a little so all the nodes do not broadcast at once
+        while(waitReceive(start + m_node_id * 5)){
+            if(rf12_len != 3 || rcvd_spheader->msgType != MSG_DISC){
+                continue;
+            }
+
+            setBit(announced, rcvd_spheader->sender);
+        }
+
+        rf12_sendNow(rf12_header, &spheader, SPHEADER_SIZE);
+
+        while(waitReceive(start + DISC_REBROADCASTS_DELAY)){
+            if(rf12_len != 3 || rcvd_spheader->msgType != MSG_DISC){
+                continue;
+            }
+
+            setBit(announced, rcvd_spheader->sender);
+        }
+    }
+
+    for(int round=0;round<DISC_ROUNDS_NUM * 2;round++){
+        int i = m_node_id + 1;
+        while(i != m_node_id){
+            if(bitIsSet(announced, i) && !(bitIsSet(m_neighbors, i))){
+                // start handshake if even ID
+                if((m_node_id + round) % 2){
+                    if(neighborHandshake(i) != SUCCESS){
+                        return FAIL;
+                    }
+                }
+            }
+
+            start = millis();
+            while(waitReceive(start + 100)){
+                neighborHandshakeResponse();
+            }
+
+            i = (i + 1) % (MAX_NODE_NUM + 1);
+        }
+    }
+
+    return SUCCESS;
+}
+
+uint32_t ProtectLayer::getNeighbors()
+{
+    return m_neighbors;
 }
 
 #endif
