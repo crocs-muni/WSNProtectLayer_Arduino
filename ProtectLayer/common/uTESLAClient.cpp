@@ -18,27 +18,6 @@ uTeslaClient::uTeslaClient(int8_t *eeprom_address, Hash *hash, MAC *mac): m_hash
     m_mac_size = mac->macSize();
 }
 
-// uTeslaClient::uTeslaClient(int16_t eeprom_address, Hash *hash, MAC *mac): m_hash(hash), m_mac(mac), m_round(0)
-// {
-// 	// for(int i=0;i<hash->hashSize();i++){
-// 	// 	m_current_key[i] = EEPROM.read(eeprom_address + i);
-// 	// }
-
-//     eeprom_read_block(m_current_key, eeprom_address, m_hash->hashSize());
-
-// 	m_hash_size = hash->hashSize();
-// 	m_mac_key_size = mac->keySize();
-//     m_mac_size = mac->macSize();
-// }
-
-// uTeslaClient::uTeslaClient(const uint8_t* initial_key, Hash *hash, MAC *mac): m_hash(hash), m_mac(mac), m_round(0)
-// {
-// 	memcpy(m_current_key, initial_key, hash->hashSize());
-// 	m_hash_size = hash->hashSize();
-// 	m_mac_key_size = mac->keySize();
-//     m_mac_size = mac->macSize();
-// }
-
 uTeslaClient::~uTeslaClient()
 {
 	memset(m_current_key, 0, m_hash_size);	// avr safe alternative?

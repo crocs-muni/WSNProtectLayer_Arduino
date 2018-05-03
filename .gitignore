@@ -12,3 +12,5 @@ ProtectLayer/common/AES/aes\.code-workspace
 Configurator/host/config_host
 
 ProtectLayer/demo_CTP/BS_host/BS_CTPdemo
+
+ProtectLayer/demo_uTESLA/BS_host/BS_uTESLAdemo

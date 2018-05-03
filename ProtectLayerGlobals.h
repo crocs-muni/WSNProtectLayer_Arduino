@@ -33,12 +33,13 @@ typedef uint8_t msg_type_t;
 */
 typedef enum _MSG_TYPE {
 	MSG_OTHER = 0,	/**< message of other (unknown) type */
-	MSG_APP,	/**< application message */
-	MSG_ROUTE,	/**< message of routing component */
-	MSG_FORWARD, /**< message to be forwarded to BS */
-    MSG_CTP,    /**< CTP distance message */
-	MSG_UTESLA,	/**< uTESLA broadcast message */
+	MSG_APP,		/**< application message */
+	MSG_ROUTE,		/**< message of routing component */
+	MSG_FORWARD, 	/**< message to be forwarded to BS */
+    MSG_CTP,    	/**< CTP distance message */
+	MSG_UTESLA,		/**< uTESLA broadcast message */
 	MSG_UTESLA_KEY,	/**< uTESLA key announcement message */
+	MSG_DISC,		/**< neighbor discovery message */
 	MSG_COUNT   /**< number of message types */
 } MSG_TYPE;
 

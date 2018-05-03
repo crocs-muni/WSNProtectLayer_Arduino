@@ -3,7 +3,6 @@
 #include <avr/sleep.h>
 #include <avr/eeprom.h>
 
-#include "addresses.h"
 #include "conf_common.h"
 
 #define BUFFER_SIZE 64

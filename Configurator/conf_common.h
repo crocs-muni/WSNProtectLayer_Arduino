@@ -1,6 +1,16 @@
 #ifndef COMMON_H
 #define COMMON_H
 
+
+// TODO! use correct size from the rest of the library
+#ifndef KEY_SIZE
+#define KEY_SIZE 16
+#endif
+
+#define CONFIG_START_ADDRESS    (uint8_t*)0x40
+#define UTESLA_KEY_ADDRESS      (uint8_t*)0x1F4
+
+
 #define MSG_TYPE_SIZE   1
 
 #define MSG_ID          0x58

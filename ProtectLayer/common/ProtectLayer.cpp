@@ -56,9 +56,46 @@ uint8_t ProtectLayer::startCTP()
 
 uint8_t ProtectLayer::sendTo(msg_type_t msg_type, uint8_t receiver, uint8_t *buffer, uint8_t size)
 {
-    // TODO! not implemented yet
-    // receiver == 1 is BS
-    return FAIL;
+    if(size > MAX_MSG_SIZE + SPHEADER_SIZE + m_mac.macSize() || receiver < 2 || !buffer){
+        return FAIL;
+    }
+    
+    uint8_t msg_buffer[MAX_MSG_SIZE + 2];
+    SPHeader_t *spheader = reinterpret_cast<SPHeader_t*>(msg_buffer + 2);
+
+    if(msg_type != MSG_OTHER && msg_type != MSG_APP){
+        return FAIL;
+    }
+
+    spheader->msgType = msg_type;
+    spheader->sender = BS_NODE_ID;
+    spheader->receiver = receiver;
+
+    memcpy(msg_buffer + 2 + SPHEADER_SIZE, buffer, size);
+
+    size += SPHEADER_SIZE;
+    if(m_crypto.protectBufferForNodeB(receiver, msg_buffer + 2, SPHEADER_SIZE, &size) != SUCCESS){
+        return FAIL;
+    }
+
+    msg_buffer[0] = size;
+    msg_buffer[1] = size;
+
+    int wr_len = 0;
+    if((wr_len = write(m_slave_fd, buffer, size + 2)) != size + 2){
+        return FAIL;
+    }
+
+    int rd_len = 0;
+    if((rd_len = read(m_slave_fd, buffer, MAX_MSG_SIZE)) != 1){
+        return FAIL;
+    }
+
+    if(buffer[0] != ERR_OK){
+        return FAIL;
+    }
+
+    return SUCCESS;
 }
 
 uint8_t ProtectLayer::receive(uint8_t *buffer, uint8_t buff_size, uint8_t *received_size)
