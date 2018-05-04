@@ -69,26 +69,6 @@ Serial.println("eq"); // TODO! REMOVE
 	return FAIL;
 }
 
-// uint8_t uTeslaClient::updateKey(const uint8_t* new_key)
-// {
-//     memset(m_working_buffer, 0, WORKING_BUFF_SIZE);
-//     m_hash->hash(new_key, m_hash_size, m_working_buffer, m_hash_size);
-    
-//     // // TODO! REMOVE
-//     // Serial.println();
-//     // printBuffer(new_key, m_hash_size);
-//     // printBuffer(m_current_key, m_hash_size);
-//     // printBuffer(m_working_buffer, m_hash_size);
-    
-//     if(!memcmp(m_working_buffer, m_current_key, m_hash_size)){
-//         memcpy(m_current_key, new_key, m_hash_size);
-//         m_round++;
-//         return SUCCESS;
-//     }
-
-//     return FAIL;
-// }
-
 uint8_t uTeslaClient::verifyMAC(const uint8_t* data, const uint16_t data_len, const uint8_t* mac)
 {
     memset(m_working_buffer, 0, WORKING_BUFF_SIZE);

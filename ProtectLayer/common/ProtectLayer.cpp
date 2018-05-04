@@ -1,6 +1,5 @@
 #include "ProtectLayer.h"
 
-
 #ifdef __linux__
 #include "configurator.h"
 
@@ -114,14 +113,9 @@ uint8_t ProtectLayer::receive(uint8_t *buffer, uint8_t buff_size, uint8_t *recei
     SPHeader_t *spheader = reinterpret_cast<SPHeader_t*>(rcvd_buff);
     uint8_t rval;
 
-#ifdef DEBUG
-    printBufferHex(rcvd_buff, rcvd_len);// TODO! REMOVE
-#endif
-
     if(spheader->receiver != BS_NODE_ID){
         return FAIL;
     }
-
 
     if((rval = m_crypto.unprotectBufferFromNodeB(spheader->sender, rcvd_buff, (uint8_t) SPHEADER_SIZE, &rcvd_len)) != SUCCESS){
         return FAIL;
@@ -312,6 +306,7 @@ uint8_t ProtectLayer::receive(uint8_t *buffer, uint8_t buff_size, uint8_t *recei
         return FAIL;
     }
 
+#ifdef ENABLE_UTESLA
     if(header->msgType == MSG_UTESLA){
         // if(m_utesla.verifyMessage(rcvd_buff + SPHEADER_SIZE, rcvd_len - SPHEADER_SIZE, false) != SUCCESS){
         //     return FAIL;
@@ -360,8 +355,7 @@ uint8_t ProtectLayer::receive(uint8_t *buffer, uint8_t buff_size, uint8_t *recei
 
         return FORWARD;
     }
-
-    // TODO! handle uTESLA
+#endif // ENABLE_UTESLA
 
     if(header->sender == BS_NODE_ID){
         rval = m_crypto.unprotectBufferFromBSB(rcvd_buff, SPHEADER_SIZE, &rcvd_len);
@@ -389,10 +383,12 @@ uint8_t ProtectLayer::getNodeID()
     return m_node_id;
 }
 
+#ifdef ENABLE_UTESLA
 uint8_t ProtectLayer::verifyMessage(uint8_t *data, uint8_t data_size)
 {
     return m_utesla.verifyMessage(data, data_size);
 }
+#endif // ENABLE_UTESLA
 
 uint8_t ProtectLayer::neighborHandshake(uint8_t node_id)
 {
@@ -551,6 +547,14 @@ uint8_t ProtectLayer::discoverNeighbors()
             i = (i + 1) % (MAX_NODE_NUM + 1);
         }
     }
+
+#ifdef DELETE_KEYS
+    for(int i=MIN_NODE_ID;i<MAX_NODE_NUM;i++){
+        if(!(bitIsSet(m_neighbors, i))){
+            m_keydistrib.deleteKey(i);
+        }
+    }
+#endif // DELETE_KEYS
 
     return SUCCESS;
 }

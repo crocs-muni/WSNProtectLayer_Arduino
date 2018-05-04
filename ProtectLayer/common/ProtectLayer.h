@@ -6,8 +6,6 @@
 #include "KeyDistrib.h"
 #include "CTP.h"
 
-#define ENABLE_UTESLA   1   // TODO move to Makefile
-
 // #undef __linux__ // TODO! REMOVE - just for VS Code syntax highliting
 
 #ifdef __linux__
@@ -102,7 +100,8 @@ public:
     /**
      * @brief Forward message to BS through CTP parent without any modification
      * 
-     * @param buffer    Data to be sent
+     * @param buffer   
+// #define ENABLE_UTESLA   1   // TODO move to Makefile Data to be sent
      * @param size      Size of the data
      * @return uint8_t  SUCCESS on success, FAIL on failure
      */
@@ -119,10 +118,12 @@ public:
      */
     uint8_t receive(uint8_t *buffer, uint8_t buff_size, uint8_t *received_size, uint16_t timeout);
 
+#ifdef ENABLE_UTESLA
     uint8_t verifyMessage(uint8_t *data, uint8_t data_size);
+#endif // ENABLE_UTESLA
 
     uint8_t discoverNeighbors();
-#endif
+#endif  // __linux__
 
     uint8_t startCTP();
 

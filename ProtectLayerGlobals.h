@@ -21,7 +21,7 @@
 #define NODE_RECV_TIMEOUT_MS    100
 
 #define BS_NODE_ID              1
-// #define INVALID_NODE_ID			50
+#define MIN_NODE_ID				2
 #define INVALID_DISTANCE		50
 
 // #define AUTOFORWARD				1	// auto forwarding of messages for BS
