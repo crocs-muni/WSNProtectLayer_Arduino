@@ -31,7 +31,9 @@ private:
     Crypto          m_crypto;
     KeyDistrib      m_keydistrib;
 
+#ifdef ENABLE_CTP
     CTP             m_ctp;
+#endif // ENABLE_CTP
 
     uint8_t         m_received[2];  // one byte of last received MAC or key - not to rebroadcast already rebroadcasted message or key
                                     // TODO use sequence number or something
@@ -97,6 +99,7 @@ public:
      */
     uint8_t sendToBS(msg_type_t msg_type, uint8_t *buffer, uint8_t size);
 
+#ifdef ENABLE_CTP
     /**
      * @brief Forward message to BS through CTP parent without any modification
      * 
@@ -106,6 +109,7 @@ public:
      * @return uint8_t  SUCCESS on success, FAIL on failure
      */
     uint8_t forwardToBS(uint8_t *buffer, uint8_t size);
+#endif //ENABLE_CTP
 
     /**
      * @brief Receive message intended for this node.

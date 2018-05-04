@@ -155,12 +155,15 @@ m_hash(&m_aes), m_mac(&m_aes), m_crypto(&m_aes, &m_mac, &m_hash, &m_keydistrib)
 
     memset(m_received, 0, 2);
     m_node_id = eeprom_read_byte(0);
+
+#ifdef ENABLE_CTP
     m_ctp.setNodeID(m_node_id);
+#endif // ENABLE_CTP
 
     rf12_initialize(m_node_id, RADIO_FREQ, RADIO_GROUP);
 }
 
-
+#ifdef ENABLE_CTP
 uint8_t ProtectLayer::startCTP()
 {
     return m_ctp.startCTP(CTP_DURATION_MS);
@@ -171,6 +174,7 @@ uint8_t ProtectLayer::sendCTP(msg_type_t msg_type, uint8_t *buffer, uint8_t size
     // TODO not implemented yet
     return sendTo(msg_type, m_ctp.getParentID(), buffer, size);
 }
+#endif // ENABLE_CTP
 
 uint8_t ProtectLayer::sendTo(msg_type_t msg_type, uint8_t receiver, uint8_t *buffer, uint8_t size)
 {
@@ -221,10 +225,10 @@ uint8_t ProtectLayer::sendToBS(msg_type_t msg_type, uint8_t *buffer, uint8_t siz
         return sendTo(msg_type, BS_NODE_ID, buffer, size);
     }
 
+#ifdef ENABLE_CTP
     if(msg_type != MSG_FORWARD){
         return FAIL;
     }
-
     uint8_t msg_buffer[MAX_MSG_SIZE];
     uint8_t msg_size = size + SPHEADER_SIZE;
 
@@ -237,8 +241,13 @@ uint8_t ProtectLayer::sendToBS(msg_type_t msg_type, uint8_t *buffer, uint8_t siz
     m_crypto.protectBufferForBSB(msg_buffer, SPHEADER_SIZE, &msg_size);
     
     return forwardToBS(msg_buffer, msg_size);
+#else
+    return FAIL;
+#endif // ENABLE_CTP
+
 }
 
+#ifdef ENABLE_CTP
 uint8_t ProtectLayer::forwardToBS(uint8_t *buffer, uint8_t size)
 {
     SPHeader_t *header = reinterpret_cast<SPHeader_t*>(buffer);
@@ -254,6 +263,7 @@ uint8_t ProtectLayer::forwardToBS(uint8_t *buffer, uint8_t size)
 
     return SUCCESS;
 }
+#endif // ENABLE_CTP
 
 uint8_t ProtectLayer::forwarduTESLA(uint8_t *buffer, uint8_t size)
 {
@@ -294,17 +304,15 @@ uint8_t ProtectLayer::receive(uint8_t *buffer, uint8_t buff_size, uint8_t *recei
 
     SPHeader_t *header = reinterpret_cast<SPHeader_t*>(rcvd_buff);
     uint8_t rval;
-    // if(m_node_id == 3){
-    //     Serial.print("> ");                // TODO! REMOVE
-    //     printBuffer(rcvd_buff, rcvd_len); // TODO! REMOVE
-    // }
 
+#ifdef ENABLE_CTP
     if(header->msgType == MSG_FORWARD){
         if((rval = forwardToBS(rcvd_buff, rcvd_len)) == SUCCESS){
             return FORWARD;
         }
         return FAIL;
     }
+#endif // ENABLE_CTP
 
 #ifdef ENABLE_UTESLA
     if(header->msgType == MSG_UTESLA){

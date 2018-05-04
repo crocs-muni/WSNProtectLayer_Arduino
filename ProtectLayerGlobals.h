@@ -4,6 +4,7 @@
 #include <stdint.h>
 
 #define ENABLE_UTESLA           1   // TODO move to Makefile
+#define ENABLE_CTP				1	// TODO move to Makefile
 
 #define MAX_MSG_SIZE            66  // maximum message length for RF12 radio
 
