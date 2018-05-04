@@ -1,4 +1,11 @@
-// #undef __linux__ // TODO! REMOVE - for VS Code syntax highlighting
+/**
+ * @brief Implementation of uTESLA protocol for non-BS JeeLink node using RF12 radio
+ * 
+ * @file    uTESLAClient.cpp
+ * @author  Martin Sarkany
+ * @date    05/2018
+ */
+
 #ifndef __linux__
 
 #include "uTESLAClient.h"
@@ -10,12 +17,10 @@
 
 uTeslaClient::uTeslaClient(int8_t *eeprom_address, Hash *hash, MAC *mac): m_hash(hash), m_mac(mac), m_round(0)
 {
-	// for(int i=0;i<hash->hashSize();i++){
-	// 	m_current_key[i] = EEPROM.read(eeprom_address + i);
-	// }
-
+    // read key from the EEPROM
     eeprom_read_block(m_current_key, eeprom_address, m_hash->hashSize());
 
+    // set variables so there is no need to call functions again
 	m_hash_size = hash->hashSize();
 	m_mac_key_size = mac->keySize();
     m_mac_size = mac->macSize();
@@ -44,9 +49,11 @@ uint8_t uTeslaClient::getKeySize()
 // TODO optimize!
 uint8_t uTeslaClient::updateKey(const uint8_t* new_key)
 {
+    // divide buffer into 2 separate parts for hashes
     uint8_t *hash_prev = m_working_buffer;
     uint8_t *hash_next = m_working_buffer + 16;
 
+    // try to synchronize if needed and set the new key if the input is correct
 	memcpy(hash_prev, new_key, m_hash_size);
 	for(int i=0;i<MAX_NUM_MISSED_ROUNDS;i++){
 		m_hash->hash(hash_prev, m_hash_size, hash_next, m_hash_size);
@@ -54,14 +61,13 @@ uint8_t uTeslaClient::updateKey(const uint8_t* new_key)
             // m_round++;
             m_round += i + 1;
             memcpy(m_current_key, new_key, m_hash_size);
-Serial.println("eq"); // TODO! REMOVE
 			return SUCCESS;
 		}
 
-        // TODO! REMOVE
-        printBuffer(new_key, 16);
-        printBuffer(hash_next, 16);
-        printBuffer(m_current_key, 16);
+        // // TODO! REMOVE
+        // printBuffer(new_key, 16);
+        // printBuffer(hash_next, 16);
+        // printBuffer(m_current_key, 16);
 		
 		memcpy(hash_prev, hash_next, m_hash_size);
 	}

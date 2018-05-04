@@ -1,3 +1,11 @@
+/**
+ * @brief Definitions for functions common in whole project.
+ * 
+ * @file    common.cpp
+ * @author  Martin Sarkany
+ * @date    05/2018
+ */
+
 #include "common.h"
 
 #ifndef __linux__
@@ -27,41 +35,14 @@ void printBuffer(const uint8_t *buffer, const uint8_t len)
     Serial.flush();
 }
 
-
-// message buffer must be at least (length+1) uint8_ts long
-void printMessage(char* message, const int length)
-{
-    message[length] = 0;
-    Serial.println(message);
-}
-
-void printHeader(uint8_t header)
-{
-    if(header & RF12_HDR_DST){
-        Serial.print("DST: ");
-        Serial.println(header ^ RF12_HDR_DST);
-    } else {
-        Serial.print("SRC: ");
-        Serial.println(header);
-    }
-}
-
-void printPacket(uint8_t packet_hdr, uint8_t packet_len, uint8_t *packet_data)
-{
-    printHeader(packet_hdr);
-    Serial.print("Length: ");
-    Serial.println(packet_len, DEC);
-    Serial.print("Message: ");
-    printMessage(packet_data, packet_len);
-    Serial.println();
-}
-
 bool waitReceive(uint32_t end)
 {
     while(1){
+        // return false if the time has passed
         if(millis() >= end){
             return false;
         }
+        // return true if packet was received
         if(rf12_recvDone() && rf12_crc == 0){
             return true;
         }
@@ -72,8 +53,6 @@ bool waitReceive(uint32_t end)
 
 void printError(int err_num)
 {
-    // Serial.print(ERROR_MESSAGE);
-    // Serial.println(err_num, DEC);
     Serial.write(err_num);
     Serial.flush();
 }
@@ -98,6 +77,14 @@ void printDebug(const char*msg, bool is_error)
         std::cout << msg << std::endl;
     }
 #endif
+}
+
+void printBufferHex(const uint8_t *buffer, const uint32_t len)
+{
+    for(uint32_t i=0;i<len;i++){
+        printf("%02X ", buffer[i]);
+    }
+    printf("\n");
 }
 
 uint64_t millis(){

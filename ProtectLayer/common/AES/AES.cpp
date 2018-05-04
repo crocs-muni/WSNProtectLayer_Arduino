@@ -1,7 +1,10 @@
-
-/*
-* Modified by Martin Sarkany, 2018
-*/
+/**
+ * @brief Implementation of AES interface. Key expansion taken from WSNProtectLayer (https://github.com/crocs-muni/WSNProtectLayer)
+ * 
+ * @file    AES.cpp
+ * @author  Martin Sarkany
+ * @date    05/2018
+ */
 
 #include <string.h>
 
@@ -26,7 +29,7 @@ void AES::keyExpansion(uint8_t *expkey, const uint8_t *key)
     /*
         The first bytes of the expanded key is the key itself.
     */
-    for(i=0;i< KEY_SIZE ;i++){
+    for(i=0;i< AES_KEY_SIZE ;i++){
         expkey[i] = key[i];
     }
 

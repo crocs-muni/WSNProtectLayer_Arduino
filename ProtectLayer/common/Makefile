@@ -1,3 +1,5 @@
+# Martin Sarkany, 05/2018
+
 LIBNAME=libcommon.a
 
 

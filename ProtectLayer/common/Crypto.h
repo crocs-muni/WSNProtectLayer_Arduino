@@ -1,12 +1,28 @@
+/**
+ * @brief 
+ * 
+ * @file 	Crypto.h
+ * @author 	Martin Sarkany
+ * @date 	05/2018
+ */
+
+/**
+ * Original files are CryptoRaw.nc and Crypto.nc from WSNProtectLayer (https://github.com/crocs-muni/WSNProtectLayer):
+ *
+ *  Interface for cryptographic functions.
+ *  This interface specifies cryptographic functions available in split-phase manner. 
+ *  
+ *  @version   1.0
+ *  @date      2012-2014
+ */
+
 #ifndef CRYPTO_H
 #define CRYPTO_H
 
-// #include "AES.h"
 #include "common.h"
 #include "AES_crypto.h"
 #include "KeyDistrib.h"
 #include "ProtectLayerGlobals.h"
-// #include "uTESLA.h"
 
 #ifndef MAC_LENGTH
 #define MAC_LENGTH 	AES_MAC_SIZE

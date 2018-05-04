@@ -1,3 +1,11 @@
+/**
+ * @brief Definitions, and functions common for whole project. To be merged with ProtectLayerGlobals.h
+ * 
+ * @file    common.h
+ * @author  Martin Sarkany
+ * @date    05/2018
+ */
+
 #ifndef _COMMON_H_
 #define _COMMON_H_
 
@@ -8,81 +16,109 @@
 #include <stdint.h>
 
 
-#define FAIL            1
-#define SUCCESS         0
+#define FAIL                1           // return value indicating failure
+#define SUCCESS             0           // return value indicating success
 
 // radio settings
-#define BAUD_RATE           115200
-#define RADIO_FREQ          RF12_868MHZ
-#define RADIO_GROUP         10
+#define BAUD_RATE           115200      // serial port baud rate
+#define RADIO_FREQ          RF12_868MHZ // RF12 radio frequency
+#define RADIO_GROUP         10          // RF12 radio group
 
 // EEPROM settings
-#define NODE_ID_LOCATION    0
-#define GROUP_ID_LOCATION   1
-#define PARENT_ID_LOCATION  2
-#define MAX_NODE_NUM        30
+#define NODE_ID_LOCATION    0           // node ID EEPROM address
+#define MAX_NODE_NUM        30          // maximum number of nodes
 
-// buffer size settings
-#define MSG_BUF_SIZE        40
+// createHeader() modes
+#define MODE_SRC            0           // include source address
+#define MODE_DST            1           // include destination address
 
-// createHeader() and send_sybil_message() modes
-#define MODE_SRC            0
-#define MODE_DST            1
+#define ERR_OK              0           // everything ok, not an error
+#define ERR_NULLARG         1           // NULL where it shouldn't be
+#define ERR_INVARG          2           // invalid argument
+#define ERR_MSG_ADD         3           // failed to add message
+#define ERR_KEY_UPDT        4           // failed to update key
+#define ERR_MSG_VRF         5           // message verification failed
+#define ERR_MSG_SIZE        6           // wrong message size
+#define ERR_SERIAL_RD       7           // failed to read message from serial port
+#define ERR_BUFFSIZE        8           // buffer too small
+#define ERR_TIMEOUT         9           // timeout
 
-// devices' IDs settings
-// #define BS_ID               1
-
-#define ERROR_MESSAGE       "Err"
-#define ERR_OK              0   // everything ok, not an error
-#define ERR_NULLARG         1   // NULL where it shouldn't be
-#define ERR_INVARG          2   // invalid argument
-#define ERR_MSG_ADD         3   // failed to add message
-#define ERR_KEY_UPDT        4   // failed to update key
-#define ERR_MSG_VRF         5   // message verification failed
-#define ERR_MSG_SIZE        6   // wrong message size
-#define ERR_SERIAL_RD       7   // failed to read message from serial port
-#define ERR_BUFFSIZE        8   // buffer too small
-#define ERR_TIMEOUT         9   // timeout
-
-// requires rcvd_len, rcvd_hdr, rcvd_buff
-// #define copy_rf12_to_buffer { rcvd_len = rf12_len; rcvd_hdr = rf12_hdr; memcpy(rcvd_buff, rf12_data, rf12_len); rf12_recvDone(); replyAck(); rf12_recvDone(); }
+// requires rcvd_len, rcvd_hdr, rcvd_buff variables
 #define copy_rf12_to_buffer() { rcvd_len = rf12_len; rcvd_hdr = rf12_hdr; memcpy(rcvd_buff, (const void*) rf12_data, rf12_len); replyAck(); rf12_recvDone(); }
 
 
-#ifndef  __linux__
+#ifdef  __linux__
 
-// sends acknowledgement if required
-void replyAck();
+/**
+ * @brief Print message if DEBUG is defined
+ * 
+ * @param msg       Message to be printed
+ * @param is_error  Message is an error
+ */
+void printDebug(const char *msg, bool is_error = false);
 
-// modes: MODE_SRC, MODE_DST
-uint8_t createHeader(uint8_t id, uint8_t mode, bool requireACK);
+/**
+ * @brief Print buffer in hex format
+ * 
+ * @param buffer    Buffer to be printed
+ * @param len       Buffer size
+ */
+void printBufferHex(const uint8_t *buffer, const uint32_t len);
 
-void printBuffer(const uint8_t *buffer, const uint8_t len);
-
-// substitutes (length+1)-th character with 0 and prints as string
-// message buffer must be at least (length+1) uint8_ts long
-void printMessage(char* message, const int length);
-
-// prints packet header
-void printHeader(uint8_t header);
-
-// prints both header and message
-void printPacket(uint8_t packet_hdr, uint8_t packet_len, uint8_t *packet_data);
-
-// waits until (device is running for) 'end' milliseconds
-// or receives packet - whichever is sooner
-// returns true if packet was received or false otherwise
-bool waitReceive(uint32_t end);
-
-void printError(int err_num);
-
-int freeRam();
+/**
+ * @brief Number of millisenconds since program start
+ * 
+ * @return uint64_t Number of millisenconds since program start
+ */
+uint64_t millis();
 
 #else
 
-void printDebug(const char *msg, bool is_error = false);
+/**
+ * @brief Send acknowledgement if required
+ * 
+ */
+void replyAck();
 
-uint64_t millis();
+/**
+ * @brief Create RF12 header
+ * 
+ * @param id            Source or destination node ID
+ * @param mode          MODE_SRC or MODE_DST
+ * @param requireACK    Message requires ackowledgement
+ * @return uint8_t      Created header
+ */
+uint8_t createHeader(uint8_t id, uint8_t mode, bool requireACK);
+
+/**
+ * @brief Print buffer through serial port
+ * 
+ * @param buffer    Buffer to be printed
+ * @param len       Buffer size
+ */
+void printBuffer(const uint8_t *buffer, const uint8_t len);
+
+/**
+ * @brief Blocking receive. Terminates when a packet is received or a device is running for 'end' milliseconds
+ * 
+ * @param end   Termination time
+ * @return true if packet was received or false otherwise
+ */
+bool waitReceive(uint32_t end);
+
+/**
+ * @brief Send error to a Linux host
+ * 
+ * @param err_num   Error code
+ */
+void printError(int err_num);
+
+/**
+ * @brief Get amount of availbale RAM
+ * 
+ * @return int amount of availbale RAM
+ */
+int freeRam();
 
 #endif // __linux__
 

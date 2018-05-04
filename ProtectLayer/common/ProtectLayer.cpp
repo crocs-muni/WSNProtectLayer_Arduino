@@ -1,3 +1,11 @@
+/**
+ * @brief Implementation of ProtectLayer for Arduino-based JeeLink devices featuring RF12 radio
+ * 
+ * @file ProtectLayer.cpp
+ * @author Martin Sarkany
+ * @date 05/2018
+ */
+
 #include "ProtectLayer.h"
 
 #ifdef __linux__
@@ -16,23 +24,33 @@ int openSerialPort(std::string path);   // TODO move from configurator to separa
 ProtectLayer::ProtectLayer(std::string &slave_path, std::string &key_file):
 m_hash(&m_aes), m_mac(&m_aes), m_keydistrib(key_file), m_crypto(&m_aes, &m_mac, &m_hash, &m_keydistrib)
 { 
+    // open file descriptor for serial port
     m_slave_fd = openSerialPort(slave_path);
     if(m_slave_fd < 0){
         throw std::runtime_error("Failed to open serial port");
     }
-// Configurator(std::string &in_filename, const int uTESLA_rounds, const int key_size = 0);
+
+#ifdef ENABLE_CTP
+    // set file descriptor in CTP class
     m_ctp.setSlaveFD(m_slave_fd);
+#endif
+    // initialize configurator class to read keys from the file
     Configurator configurator(key_file, 0, 0);
+
+    // initialize uTESLA class with keys from configurator
     m_utesla = new uTeslaMaster(m_slave_fd, configurator.getuTESLAKey(), configurator.getuTESLARounds(), &m_hash, &m_mac);
 
-    // fire up the device
+    // fire up the device - sometimes it takes a read first
     uint8_t buffer[MAX_MSG_SIZE];
     read(m_slave_fd, buffer, MAX_MSG_SIZE);
 }
 
 ProtectLayer::~ProtectLayer()
 {
+    // uTESLA was dynamically allocated
     delete m_utesla;
+    
+    // close slave device if open
     if(m_slave_fd > 0){
         close(m_slave_fd);
     }
@@ -55,41 +73,52 @@ uint8_t ProtectLayer::startCTP()
 
 uint8_t ProtectLayer::sendTo(msg_type_t msg_type, uint8_t receiver, uint8_t *buffer, uint8_t size)
 {
-    if(size > MAX_MSG_SIZE + SPHEADER_SIZE + m_mac.macSize() || receiver < 2 || !buffer){
+    // return FAIL in case of too long messages, NULL buffer or invalid recipient
+    if(size > MAX_MSG_SIZE + SPHEADER_SIZE + m_mac.macSize() || receiver < 2 || receiver > MAX_NODE_NUM || !buffer){
+        return FAIL;
+    }
+    
+    // return FAIL if not allowed message type
+    if(msg_type != MSG_OTHER && msg_type != MSG_APP){
         return FAIL;
     }
     
     uint8_t msg_buffer[MAX_MSG_SIZE + 2];
+
+    // set header pointer to beginning of the message (first 2 bytes are only for serial communication between master and slave BS devices)
     SPHeader_t *spheader = reinterpret_cast<SPHeader_t*>(msg_buffer + 2);
-
-    if(msg_type != MSG_OTHER && msg_type != MSG_APP){
-        return FAIL;
-    }
-
+    // set the header
     spheader->msgType = msg_type;
     spheader->sender = BS_NODE_ID;
     spheader->receiver = receiver;
 
+    // copy the rest of the message into buffer
     memcpy(msg_buffer + 2 + SPHEADER_SIZE, buffer, size);
 
+    // set the new size to size + header size
     size += SPHEADER_SIZE;
+    // encryption and MAC
     if(m_crypto.protectBufferForNodeB(receiver, msg_buffer + 2, SPHEADER_SIZE, &size) != SUCCESS){
         return FAIL;
     }
 
+    // set first 2 bytes for serial communication
     msg_buffer[0] = size;
     msg_buffer[1] = size;
 
+    // send buffer to device
     int wr_len = 0;
     if((wr_len = write(m_slave_fd, buffer, size + 2)) != size + 2){
         return FAIL;
     }
 
+    // receive the response
     int rd_len = 0;
     if((rd_len = read(m_slave_fd, buffer, MAX_MSG_SIZE)) != 1){
         return FAIL;
     }
 
+    // check the response
     if(buffer[0] != ERR_OK){
         return FAIL;
     }
@@ -102,31 +131,40 @@ uint8_t ProtectLayer::receive(uint8_t *buffer, uint8_t buff_size, uint8_t *recei
     uint8_t rcvd_len = 0;
     uint8_t rcvd_buff[MAX_MSG_SIZE + 10];
 
+    // get new message from the slave
     if((rcvd_len = read(m_slave_fd, (void*) rcvd_buff, MAX_MSG_SIZE)) < SPHEADER_SIZE + m_mac.macSize()){
+        // return FAIL if there is none
         return FAIL;
     }
 
+    // discard message if it does not fit into buffer
     if(rcvd_len > MAX_MSG_SIZE){    // cannot happen
         return ERR_BUFFSIZE;
     }
 
+    // set the header pointer
     SPHeader_t *spheader = reinterpret_cast<SPHeader_t*>(rcvd_buff);
     uint8_t rval;
 
+    // discard messages for other nodes
     if(spheader->receiver != BS_NODE_ID){
         return FAIL;
     }
 
+    // decrypt and verify MAC
     if((rval = m_crypto.unprotectBufferFromNodeB(spheader->sender, rcvd_buff, (uint8_t) SPHEADER_SIZE, &rcvd_len)) != SUCCESS){
         return FAIL;
     }
 
+    // set the actual data size + header
     *received_size = rcvd_len - m_mac.macSize();
 
+    // return FAIL if plaintext does not fit into buffer
     if(*received_size > buff_size){
         return FAIL;
     }
 
+    // copy message into buffer
     memcpy(buffer, rcvd_buff, *received_size);
 
     return SUCCESS;
@@ -151,15 +189,21 @@ ProtectLayer::ProtectLayer():
 m_hash(&m_aes), m_mac(&m_aes), m_crypto(&m_aes, &m_mac, &m_hash, &m_keydistrib)
 #endif
 {
+    // initialize serial communication
     Serial.begin(BAUD_RATE);
 
+    // set received indicators to 0
     memset(m_received, 0, 2);
+
+    // read the node ID from EEPROM
     m_node_id = eeprom_read_byte(0);
 
 #ifdef ENABLE_CTP
+    // set node ID to CTP class if enabled
     m_ctp.setNodeID(m_node_id);
 #endif // ENABLE_CTP
 
+    // initialize the radio
     rf12_initialize(m_node_id, RADIO_FREQ, RADIO_GROUP);
 }
 
@@ -171,33 +215,38 @@ uint8_t ProtectLayer::startCTP()
 
 uint8_t ProtectLayer::sendCTP(msg_type_t msg_type, uint8_t *buffer, uint8_t size)
 {
-    // TODO not implemented yet
     return sendTo(msg_type, m_ctp.getParentID(), buffer, size);
 }
 #endif // ENABLE_CTP
 
 uint8_t ProtectLayer::sendTo(msg_type_t msg_type, uint8_t receiver, uint8_t *buffer, uint8_t size)
 {
-    if(!buffer || size + SPHEADER_SIZE > MAX_MSG_SIZE){ // TODO size can be bigger when using block cipher
+    // return FAIL if NULL buffer or the message too long
+    if(!buffer || size + SPHEADER_SIZE + m_mac.macSize() > MAX_MSG_SIZE){
         return FAIL;
     }
 
-    if(receiver < 1 || receiver > 30){
+    // return FAIL if invalid receiver
+    if(receiver < 1 || receiver > MAX_NODE_NUM){
         return FAIL;
     }
 
+    // new message length - including header (will further increase when MAC is applied)
     uint8_t pLen = size + SPHEADER_SIZE;
     uint8_t msg_buffer[MAX_MSG_SIZE];   // TODO use some common buffer
+    // set header pointer to beginning of the message
     SPHeader_t *header = reinterpret_cast<SPHeader_t*>(msg_buffer);
     memset(msg_buffer, 0, MAX_MSG_SIZE);
 
+    // set the header
     header->msgType = msg_type;
     header->receiver = receiver;
     header->sender = m_node_id;
     memcpy(msg_buffer + SPHEADER_SIZE, buffer, size);
 
     uint8_t rval;
-    if(receiver == 1){
+    // encryption and MAC
+    if(receiver == BS_NODE_ID){
         // message for BS
         rval = m_crypto.protectBufferForBSB(msg_buffer, SPHEADER_SIZE, &pLen);
     } else {
@@ -205,10 +254,12 @@ uint8_t ProtectLayer::sendTo(msg_type_t msg_type, uint8_t receiver, uint8_t *buf
         rval = m_crypto.protectBufferForNodeB(receiver, msg_buffer, SPHEADER_SIZE, &pLen);
     }
 
+    // return on failure
     if(rval != SUCCESS){
         return rval;
     }
 
+    // send over radio
     uint8_t rf12_header = createHeader(receiver, MODE_DST, DEFAULT_REQ_ACK);
     rf12_sendNow(rf12_header, msg_buffer, pLen);
 
@@ -217,11 +268,13 @@ uint8_t ProtectLayer::sendTo(msg_type_t msg_type, uint8_t receiver, uint8_t *buf
 
 uint8_t ProtectLayer::sendToBS(msg_type_t msg_type, uint8_t *buffer, uint8_t size)
 {
-    if(size > MAX_MSG_SIZE - SPHEADER_SIZE){
+    // return FAIL if NULL buffer or the message too long
+    if(!buffer || size + SPHEADER_SIZE + m_mac.macSize() > MAX_MSG_SIZE){
         return FAIL;
     }
 
-    if(msg_type == MSG_APP){
+    // send one-hop message
+    if(msg_type == MSG_APP || msg_type == MSG_OTHER){
         return sendTo(msg_type, BS_NODE_ID, buffer, size);
     }
 
@@ -229,17 +282,22 @@ uint8_t ProtectLayer::sendToBS(msg_type_t msg_type, uint8_t *buffer, uint8_t siz
     if(msg_type != MSG_FORWARD){
         return FAIL;
     }
+
+    // send message to be forwarded to BS
     uint8_t msg_buffer[MAX_MSG_SIZE];
     uint8_t msg_size = size + SPHEADER_SIZE;
 
+    // set the header pointer
     SPHeader_t *header = reinterpret_cast<SPHeader_t*>(msg_buffer);
     header->msgType = msg_type;
     header->sender = m_node_id;
     header->receiver = BS_NODE_ID;
     memcpy(msg_buffer + SPHEADER_SIZE, buffer, size);
 
+    // encryption and MAC
     m_crypto.protectBufferForBSB(msg_buffer, SPHEADER_SIZE, &msg_size);
     
+    // send to a CTP parrent node
     return forwardToBS(msg_buffer, msg_size);
 #else
     return FAIL;
@@ -252,12 +310,17 @@ uint8_t ProtectLayer::forwardToBS(uint8_t *buffer, uint8_t size)
 {
     SPHeader_t *header = reinterpret_cast<SPHeader_t*>(buffer);
 
+    // check the message type to be sure it must be forwarded
     if(header->msgType != MSG_FORWARD){
         return FAIL;
     }
 
-    // header->sender = m_node_id;
-    // header->receiver = m_ctp->getParentID();
+    // check if the parent is known
+    if(m_ctp.getParentID() < 1 || m_ctp.getParentID() > MAX_NODE_NUM){
+        return FAIL;
+    }
+
+    // forward to a CTP parent
     uint8_t rf12_header = createHeader(m_ctp.getParentID(), MODE_DST, DEFAULT_REQ_ACK);
     rf12_sendNow(rf12_header, buffer, size);
 
@@ -270,6 +333,7 @@ uint8_t ProtectLayer::forwarduTESLA(uint8_t *buffer, uint8_t size)
     // does not work if they all resend it at once
     delay(m_node_id * 20);
 
+    // send
     uint8_t rf12_header = createHeader(m_node_id, MODE_SRC, DEFAULT_REQ_ACK);
     rf12_sendNow(rf12_header, buffer, size);
     
@@ -283,29 +347,37 @@ uint8_t ProtectLayer::receive(uint8_t *buffer, uint8_t buff_size, uint8_t *recei
 
 uint8_t ProtectLayer::receive(uint8_t *buffer, uint8_t buff_size, uint8_t *received_size, uint16_t timeout)
 {
+    // set timeout to 1 ms so it checks for new message at least once
     if(!timeout){
         timeout = 1;
     }
 
+    // blocking receive
     if(!waitReceive(millis() + timeout)){
-        return ERR_TIMEOUT;
+        // return ERR_TIMEOUT;
+        return FAIL;
     }
 
+    // return if the mesage does not fit into a buffer
     if(rf12_len > MAX_MSG_SIZE){
-        return ERR_BUFFSIZE;
+        // return ERR_BUFFSIZE;
+        return FAIL;
     }
 
     uint8_t rcvd_hdr;   // just to use macro copy_rf12_to_buffer
     uint8_t rcvd_len;
     uint8_t rcvd_buff[MAX_MSG_SIZE];
 
+    // copy to local variables and send acknowledgement if required
     copy_rf12_to_buffer();
     (void)rcvd_hdr; // unused
 
+    // set header pointer
     SPHeader_t *header = reinterpret_cast<SPHeader_t*>(rcvd_buff);
     uint8_t rval;
 
 #ifdef ENABLE_CTP
+    // forward message if CTP is enabled
     if(header->msgType == MSG_FORWARD){
         if((rval = forwardToBS(rcvd_buff, rcvd_len)) == SUCCESS){
             return FORWARD;
@@ -316,11 +388,8 @@ uint8_t ProtectLayer::receive(uint8_t *buffer, uint8_t buff_size, uint8_t *recei
 
 #ifdef ENABLE_UTESLA
     if(header->msgType == MSG_UTESLA){
-        // if(m_utesla.verifyMessage(rcvd_buff + SPHEADER_SIZE, rcvd_len - SPHEADER_SIZE, false) != SUCCESS){
-        //     return FAIL;
-        // }
-
         // ignore already received message
+        // TODO use a sequence number or something like that - this will not work in some cases
         if(rcvd_buff[16] == m_received[0]){
             return FAIL;
         }
@@ -328,7 +397,6 @@ uint8_t ProtectLayer::receive(uint8_t *buffer, uint8_t buff_size, uint8_t *recei
 
         // not verifying anything, the key has not arrived yet
         // forward, return SUCCESS and verify in app
-
         if(forwarduTESLA(rcvd_buff, rcvd_len) != SUCCESS){
             return FAIL;
         }
@@ -340,47 +408,56 @@ uint8_t ProtectLayer::receive(uint8_t *buffer, uint8_t buff_size, uint8_t *recei
     }
 
     if(header->msgType == MSG_UTESLA_KEY){
+        // check the size
         if(rcvd_len  != SPHEADER_SIZE + m_mac.macSize()){
             return FAIL;
         }
 
         // ignore already received key
+        // TODO use a sequence number or something like that - this will not work in some cases
         if(rcvd_buff[16] == m_received[1]){
             return FAIL;
         }
 
+        // update uTESLA key
         if(m_utesla.updateKey(rcvd_buff + SPHEADER_SIZE) != SUCCESS){
             return FAIL;
         }
         m_received[1] = rcvd_buff[16];
 
+        // forward the key
         if(forwarduTESLA(rcvd_buff, rcvd_len) != SUCCESS){
             return FAIL;
         }
 
+        // copy message to buffer - probably not needed but anyway..
         memcpy(buffer, rcvd_buff, rcvd_len);
         *received_size = rcvd_len;
 
+        // return different value than SUCCESS so the app can skip it easily
         return FORWARD;
     }
 #endif // ENABLE_UTESLA
 
+    // decrypt and verify MAC
     if(header->sender == BS_NODE_ID){
         rval = m_crypto.unprotectBufferFromBSB(rcvd_buff, SPHEADER_SIZE, &rcvd_len);
     } else {
         rval = m_crypto.unprotectBufferFromNodeB(header->sender, rcvd_buff, SPHEADER_SIZE, &rcvd_len);
     }
-
     if(rval != SUCCESS){
         return FAIL;
     }
 
+    // set the size
     *received_size = rcvd_len - m_mac.macSize();
 
+    // return FAIL if it does not fit into buffer
     if(*received_size > buff_size){
         return FAIL;
     }
 
+    // copy to buffer
     memcpy(buffer, rcvd_buff, *received_size);
 
     return SUCCESS;
@@ -402,6 +479,8 @@ uint8_t ProtectLayer::neighborHandshake(uint8_t node_id)
 {
     uint8_t msg_buffer[MAX_MSG_SIZE];
     uint8_t msg_size = SPHEADER_SIZE + 4;
+
+    // create header
     uint8_t rf12_header = createHeader(node_id, MODE_DST, DEFAULT_REQ_ACK);
     volatile SPHeader_t *spheader = reinterpret_cast<SPHeader_t*>(msg_buffer);
 
@@ -409,40 +488,50 @@ uint8_t ProtectLayer::neighborHandshake(uint8_t node_id)
     spheader->sender = m_node_id;
     spheader->receiver = node_id;
 
+    // get some random nonce
+    // TODO better source of entropy
     uint32_t nonce = random(/*0xFFFFFFFF*/);
     memcpy(msg_buffer + SPHEADER_SIZE, &nonce, 4);
 
+    // encrypt and compute MAC
     if(m_crypto.protectBufferForNodeB(node_id, msg_buffer, SPHEADER_SIZE, &msg_size) != SUCCESS){
         return FAIL;
     }
 
+    // send
     rf12_sendNow(rf12_header, msg_buffer, msg_size);
 
+    // wait for response
     uint32_t start = millis();
     while(waitReceive(start + DISC_NEIGHBOR_RSP_TIME)){
+        // check the header
         spheader = reinterpret_cast<volatile SPHeader_t*>(rf12_data);
         if(spheader->msgType != MSG_DISC || spheader->sender != node_id){
             continue;
         }
 
+        // copy the message
         memcpy(msg_buffer, rf12_data, rf12_len);
         msg_size = rf12_len;
         rf12_recvDone();
 
+        // decrypt and verify MAC
         if(m_crypto.unprotectBufferFromNodeB(node_id, msg_buffer, SPHEADER_SIZE, &msg_size) != SUCCESS){
             continue;
         }
-        
 
+        // check the size
         if(msg_size < SPHEADER_SIZE + 4){
             continue;
         }
 
+        // check if the nonce was properly incremented
         nonce++;
         if(memcmp(&nonce, msg_buffer + SPHEADER_SIZE, 4)){
             continue;
         }
         
+        // set bit in neighbors list
         setBit(m_neighbors, node_id);
     }
 
@@ -451,11 +540,13 @@ uint8_t ProtectLayer::neighborHandshake(uint8_t node_id)
 
 uint8_t ProtectLayer::neighborHandshakeResponse()
 {
+    // data must already be in rf12_buff!!!!!
+
+    // check the message size
     if(rf12_len < SPHEADER_SIZE + 4){
         return FAIL;
     }
 
-    // data must already be in rf12_buff!!!!!
     uint8_t msg_buffer[MAX_MSG_SIZE];
     uint8_t msg_size = SPHEADER_SIZE + 4;
 
@@ -463,6 +554,7 @@ uint8_t ProtectLayer::neighborHandshakeResponse()
     msg_size = rf12_len;
     rf12_recvDone();
 
+    // check the header
     SPHeader_t *spheader = reinterpret_cast<SPHeader_t*>(msg_buffer);
 
     if(spheader->msgType != MSG_DISC || spheader->receiver != m_node_id){
@@ -472,21 +564,26 @@ uint8_t ProtectLayer::neighborHandshakeResponse()
     uint8_t other_id = spheader->sender;
     uint8_t rf12_header = createHeader(other_id, MODE_DST, DEFAULT_REQ_ACK);
 
+    // decrypt and compute MAC
     if(m_crypto.unprotectBufferFromNodeB(other_id, msg_buffer, SPHEADER_SIZE, &msg_size) != SUCCESS){
         return FAIL;
     }
     msg_size -= m_mac.macSize();
 
+    // increment the nonce
     uint32_t *nonce = reinterpret_cast<uint32_t*>(msg_buffer + SPHEADER_SIZE);
     (*nonce)++;
 
+    // set new header
     spheader->sender = m_node_id;
     spheader->receiver = other_id;
 
+    // encrypt and compute MAC
     if(m_crypto.protectBufferForNodeB(other_id, msg_buffer, SPHEADER_SIZE, &msg_size) != SUCCESS){
         return FAIL;
     }
 
+    // send
     rf12_sendNow(rf12_header, msg_buffer, msg_size);
 
     return SUCCESS;
@@ -495,26 +592,30 @@ uint8_t ProtectLayer::neighborHandshakeResponse()
 
 uint8_t ProtectLayer::discoverNeighbors()
 {
+    // seed the PRNG
     randomSeed(analogRead(0));  // TODO better source of entropy
     uint32_t start = 0;
 
-    // uint8_t msg_buffer[MAX_MSG_SIZE];
+    // create headers
     uint8_t rf12_header = createHeader(m_node_id, MODE_SRC, DEFAULT_REQ_ACK);
-    SPHeader_t spheader;// = reinterpret_cast<SPHeader_t*>(msg_buffer);
-
+    SPHeader_t spheader;
     spheader.msgType = MSG_DISC;
     spheader.sender = m_node_id;
     spheader.receiver = 0;
 
+    // wait few ms so all the nodes do not start at once and wait till they can broadcast
     delay(m_node_id * 10);    // pure heuristics
 
-    // each bit means possible neighbor has/hasn't announce their presence
+    // each bit means possible neighbor has/hasn't announced their presence
     uint32_t announced = 0;
+
+    // set the header pointer for received messages
     volatile SPHeader_t *rcvd_spheader = reinterpret_cast<volatile SPHeader_t*>(rf12_data);
 
     // broadcast ID in plaintext and mark nodes that messages came from
     for(int i=0;i<DISC_REBROADCASRS_NUM;i++){
         start = millis();
+        // receive messages
         // trying to randomize it a little so all the nodes do not broadcast at once
         while(waitReceive(start + m_node_id * 5)){
             if(rf12_len != 3 || rcvd_spheader->msgType != MSG_DISC){
@@ -524,8 +625,10 @@ uint8_t ProtectLayer::discoverNeighbors()
             setBit(announced, rcvd_spheader->sender);
         }
 
+        // send own message
         rf12_sendNow(rf12_header, &spheader, SPHEADER_SIZE);
 
+        // further receive messages
         while(waitReceive(start + DISC_REBROADCASTS_DELAY)){
             if(rf12_len != 3 || rcvd_spheader->msgType != MSG_DISC){
                 continue;
@@ -535,9 +638,13 @@ uint8_t ProtectLayer::discoverNeighbors()
         }
     }
 
+    // start handshakes in few rounds
     for(int round=0;round<DISC_ROUNDS_NUM * 2;round++){
+        // start with the node with next ID
         int i = m_node_id + 1;
+        // loop through all IDs
         while(i != m_node_id){
+            // perform handshake if the node announced itself
             if(bitIsSet(announced, i) && !(bitIsSet(m_neighbors, i))){
                 // start handshake if even ID
                 if((m_node_id + round) % 2){
@@ -547,6 +654,7 @@ uint8_t ProtectLayer::discoverNeighbors()
                 }
             }
 
+            // try to receive handshake messages and respond
             start = millis();
             while(waitReceive(start + 100)){
                 neighborHandshakeResponse();
@@ -557,6 +665,7 @@ uint8_t ProtectLayer::discoverNeighbors()
     }
 
 #ifdef DELETE_KEYS
+    // delete keys of other nodes
     for(int i=MIN_NODE_ID;i<MAX_NODE_NUM;i++){
         if(!(bitIsSet(m_neighbors, i))){
             m_keydistrib.deleteKey(i);

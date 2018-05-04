@@ -1,5 +1,14 @@
+/**
+ * @brief Stripped-down implementation of a CTP protocol for Linux BS and JeeLink devices
+ * 
+ * @file    CTP.cpp
+ * @author  Martin Sarkany
+ * @date    05/2018
+ */
+
 #include "CTP.h"
 
+#include "common.h"
 
 #ifdef __linux__    // BS host
 #include <chrono>
@@ -8,37 +17,37 @@
 #include <cstring>
 #include <unistd.h>
 
-// #include "uTESLAMaster.h"
 
 void CTP::setSlaveFD(int slave_fd)
 {
     m_slave_fd = slave_fd;
 }
-#include <iostream> // TODO REMOVE!
+
 uint8_t CTP::startCTP(uint32_t duration)
 {
     uint64_t start = millis();
     uint8_t buffer[MAX_MSG_SIZE];
     uint8_t recv_buffer[MAX_MSG_SIZE];
 
-    // read(m_slave_fd, buffer, MAX_MSG_SIZE);
-
     memset(buffer, 0, MAX_MSG_SIZE);
-    // SPHeader_t header = { MSG_CTP, BS_NODE_ID, 0 };
 
+    // set size of message for serial communication
     buffer[0] = SPHEADER_SIZE + 1;
     buffer[1] = buffer[0];
-    // memcpy(buffer + 2, &header, SPHEADER_SIZE);
+    
+    // set header pointer
     SPHeader_t *header = reinterpret_cast<SPHeader_t*>(buffer + 2);
     header->msgType = MSG_CTP;
     header->sender = BS_NODE_ID;
     header->receiver = 0;
 
+    // set distance to 0
     buffer[SPHEADER_SIZE + 2] = 0;
 
+    // rebroadcast several times
     for(int i=0;i<CTP_REBROADCASTS_NUM;i++){
         int len;
-        // printBufferHex(buffer, SPHEADER_SIZE + 3);
+        
         if((len = write(m_slave_fd, buffer, sizeof(SPHeader_t) + 3)) < sizeof(SPHeader_t) + 3){
             return FAIL;
         }
@@ -80,14 +89,19 @@ void CTP::setNodeID(uint8_t node_id)
 // extracts distance from packet
 void CTP::update(uint8_t *message)
 {
+    Serial.println(message[3]);
+
+    // check header
     if(((SPHeader_t*)(message))->msgType != MSG_CTP){
         return;
     }
 
+    // ignore longer distances
     if(message[sizeof(SPHeader_t)] + 1 >= m_distance){
         return;
     }
 
+    // set attributes
     m_distance = message[sizeof(SPHeader_t)] + 1;
     m_parent_id = ((SPHeader_t*)(message))->sender;
 }
@@ -97,13 +111,11 @@ void CTP::handleDistanceMessages(uint32_t end)
 {
     uint8_t rcvd_msg[sizeof(SPHeader_t) + 1];
     uint8_t rcvd_msg_len;
-    // uint8_t rcvd_msg_hdr;
 
     while(waitReceive(end)){
         replyAck();
         if(rf12_len == sizeof(SPHeader_t) + 1){
             rcvd_msg_len = rf12_len;
-            // rcvd_msg_hdr = rf12_hdr;
             memcpy( rcvd_msg, rf12_data, rcvd_msg_len);    
         }
         rf12_recvDone();
@@ -112,23 +124,27 @@ void CTP::handleDistanceMessages(uint32_t end)
     }
 }
 
-
 // broadcasts it's distance from BS
 void CTP::broadcastDistance(){
-    if(m_distance == 50){   // TODO use define
+    if(m_distance == INVALID_DISTANCE){   // TODO use define
         return;
     }
+
     uint8_t buffer[sizeof(SPHeader_t) + 1];
+
+    // set header
     SPHeader_t *header = reinterpret_cast<SPHeader_t*>(buffer);
     header->msgType = MSG_CTP;
     header->sender = m_node_id;
     header->receiver = 0;
+
+    // set distance
     buffer[sizeof(SPHeader_t)] = m_distance;
 
+    // send
     uint8_t rf12_header = createHeader(0, MODE_SRC, m_req_ack);
     rf12_sendNow(rf12_header, buffer, sizeof(SPHeader_t) + 1);
 }
-
 
 // routing table establishment phase main function for non-BS nodes
 uint8_t CTP::startCTP(uint32_t duration)
@@ -142,8 +158,8 @@ uint8_t CTP::startCTP(uint32_t duration)
 
         // broadcast own distance
         broadcastDistance();
-        rf12_sendWait(0);
-        
+        // TODO ?
+
         // if there is time left (should be), continue receiving distance messages
         handleDistanceMessages(ms + 500);
     }
@@ -157,11 +173,11 @@ uint8_t CTP::startCTP(uint32_t duration)
     return SUCCESS;
 }
 
-void CTP::send(uint8_t *buffer, uint8_t length)
-{
-    uint8_t header = createHeader(m_parent_id, MODE_DST, m_req_ack);
-    rf12_sendNow(header, buffer, length);
-}
+// void CTP::send(uint8_t *buffer, uint8_t length)
+// {
+//     uint8_t header = createHeader(m_parent_id, MODE_DST, m_req_ack);
+//     rf12_sendNow(header, buffer, length);
+// }
 
 uint8_t CTP::getParentID()
 {

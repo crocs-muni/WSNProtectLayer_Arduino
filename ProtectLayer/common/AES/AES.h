@@ -35,7 +35,7 @@
 */
 
 /*
-* Modified by Martin Sarkany, 2018
+* Modified by Martin Sarkany, 03/2018
 */
 
 #ifndef AES_H
@@ -45,16 +45,10 @@
 
 #include "ProtectLayerGlobals.h"
 
-#define AES_HASH_SIZE   16
-#define AES_BLOCK_SIZE  16
-#define AES_MAC_SIZE    AES_BLOCK_SIZE
-#define AES_KEY_SIZE    16 // using 128-bit AES
-
-
 /*
     The key size in bytes. It can be 16, 24 or 32.
 */
-#define KEY_SIZE    16
+// #define KEY_SIZE    AES_KEY_SIZE
 
 /*
     Number of rounds. It should be 10 for a 16-byte key, 12 for a 24-byte key and 14 for a 32-byte key.
@@ -72,15 +66,6 @@
 #define Nk 4
 
 
-// TODO! move elsewhere
-typedef struct _key {
-//   uint8_t   keyType;
-  uint8_t   keyValue[KEY_SIZE];
-//   uint16_t  dbgKeyID;
-  uint32_t  *counter;
-} PL_key_t;
-
-
 class AES: public Cipher {
 public:
     virtual void keyExpansion(uint8_t *expkey, const uint8_t *key);
@@ -91,4 +76,3 @@ public:
 };
 
 #endif // AES_H
-

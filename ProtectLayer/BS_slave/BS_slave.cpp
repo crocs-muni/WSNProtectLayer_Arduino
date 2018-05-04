@@ -5,10 +5,6 @@
 #include "common.h"
 #include "ProtectLayerGlobals.h"
 
-// #define RADIO_FREQ  RF12_868MHZ
-// #define RADIO_GROUP 10
-// #define BAUD_RATE   115200
-
 #define BUFFER_SIZE 80
 
 uint8_t node_id = BS_NODE_ID;
@@ -21,8 +17,6 @@ uint8_t rcvd_buff[MAX_MSG_SIZE];
 void setup()
 {
     Serial.begin(BAUD_RATE);
-    // Serial.println("\n===== BS slave =====\n");
-    // Serial.flush();
 
     header = createHeader(node_id, MODE_SRC, 0);
 
@@ -35,36 +29,34 @@ void loop()
 {
     char buffer[BUFFER_SIZE];
     if(Serial.available() > 0){
+        // read 1st length byte
         uint8_t len1 = Serial.read();
+
+        // read 2nd length byte
         while(Serial.available() < 1);
         uint8_t len2 = Serial.read();
-            // Serial.write(len1);
-            // Serial.write(len2);
+
+        // compare length bytes
         if(len1 != len2){
-            // Serial.print("Incorrect length byte: ");
-            // Serial.println(len2);
             printError(ERR_MSG_SIZE);
-            // Serial.flush();
             return;
         }
 
+        // read data
         while(Serial.available() < 1);
         if(Serial.readBytes(buffer, len1) != len1){
-            // Serial.println("Failed to receive whole packet from serial port");
             printError(ERR_SERIAL_RD);
-            // Serial.flush();
             return;
         }
 
-        // Serial.println("Sending: ");
-        // printBuffer(buffer, len1);
-        // Serial.flush();
-
+        // send
         rf12_sendNow(header, buffer, len1);
 
+        // ack
         printError(ERR_OK);
     }
 
+    // receive from radio
     if(rf12_recvDone() && !rf12_crc){
         if((rf12_hdr & RF12_HDR_MASK) != BS_NODE_ID){
             rf12_recvDone();
@@ -75,12 +67,9 @@ void loop()
             return;
         }
 
-        // message_len = rf12_len + RF12_HDR_SIZE;
-        // memcpy(message_buffer, rf12_buf, message_len);
-        // memcpy(message_buffer, rf12_data, message_len);
-        // replyAck();
-        // rf12_recvDone();
         copy_rf12_to_buffer();
+
+        // send to host
         Serial.write(rcvd_buff, rcvd_len);
         Serial.flush();
     }
