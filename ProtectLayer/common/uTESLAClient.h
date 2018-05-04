@@ -7,8 +7,6 @@
 #include <EEPROM.h>
 #include <RF12.h>
 
-#include "uTESLA.h"
-// #include "AES_crypto.h"
 #include "ProtectLayerGlobals.h"
 
 #define MAX_KEY_SIZE            16  // possible 128-bit output of hash function

@@ -9,23 +9,22 @@
 // #undef __linux__ // TODO! REMOVE - just for VS Code syntax highliting
 
 #ifdef __linux__
+#include <string>
 
 #include "uTESLAMaster.h"
 #include "configurator.h"
-
-#include <string>
-
 #else 
-
 #include "uTESLAClient.h"
-
 #endif
 
+/**
+ * @brief Class that provides security features for WSN communication over RF12 radio. Works on Linux host as base station and JeeLink devices as a regular node.
+ * BS requires slave node to provide RF12 communication.
+ * 
+ */
 class ProtectLayer {
 private:
-    uint8_t         m_node_id;
-
-    AES             m_aes;
+    AES             m_aes;          // class providing single-block AES encryption
     AEShash         m_hash;
     AESMAC          m_mac;
     Crypto          m_crypto;
@@ -42,6 +41,7 @@ private:
     uTeslaMaster    *m_utesla;
     int             m_slave_fd;
 #else
+    uint8_t         m_node_id;      // this node's ID
     uint32_t        m_neighbors;    // available only after neighbor discovery
 
     uint8_t forwarduTESLA(uint8_t *buffer, uint8_t size);

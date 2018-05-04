@@ -43,6 +43,8 @@
 
 #include <stdint.h>
 
+#include "ProtectLayerGlobals.h"
+
 #define AES_HASH_SIZE   16
 #define AES_BLOCK_SIZE  16
 #define AES_MAC_SIZE    AES_BLOCK_SIZE
@@ -78,17 +80,6 @@ typedef struct _key {
   uint32_t  *counter;
 } PL_key_t;
 
-
-
-// TODO move elsewhere
-class Cipher {
-public:
-    virtual void keyExpansion(uint8_t *expkey, const uint8_t *key) = 0;
-
-    virtual bool encrypt(const uint8_t *in_block, uint8_t *expkey, uint8_t *out_block) = 0;
-
-    virtual bool decrypt(const uint8_t *in_block, uint8_t *expkey, uint8_t *out_block) = 0;
-};
 
 class AES: public Cipher {
 public:

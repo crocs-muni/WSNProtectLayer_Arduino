@@ -10,10 +10,7 @@
 
 #include <stdint.h>
 
-
-//#include "blake224_crypto.h"
-//#include "AES_crypto.h"
-#include "uTESLA.h"
+#include "ProtectLayerGlobals.h"
 
 #ifndef MAX_KEY_SIZE
 #define MAX_KEY_SIZE            32  // possible 256-bit output of hash function

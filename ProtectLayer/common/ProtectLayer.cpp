@@ -14,7 +14,7 @@ int openSerialPort(std::string path);   // TODO move from configurator to separa
 
 
 ProtectLayer::ProtectLayer(std::string &slave_path, std::string &key_file):
-m_hash(&m_aes), m_mac(&m_aes), m_keydistrib(key_file), m_crypto(&m_aes, &m_mac, &m_hash, &m_keydistrib), m_node_id(BS_NODE_ID)
+m_hash(&m_aes), m_mac(&m_aes), m_keydistrib(key_file), m_crypto(&m_aes, &m_mac, &m_hash, &m_keydistrib)
 { 
     m_slave_fd = openSerialPort(slave_path);
     if(m_slave_fd < 0){

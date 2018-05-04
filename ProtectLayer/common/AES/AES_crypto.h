@@ -5,8 +5,8 @@
 
 #define KEY_SIZE        16
 
-#include "uTESLA.h"
 #include "AES.h"
+#include "common.h"
 
 
 class AEShash: public Hash {

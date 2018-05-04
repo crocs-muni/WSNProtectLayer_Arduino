@@ -69,6 +69,29 @@ typedef struct SPHeader {
 #define setBit(variable, bit) variable |= (1 << bit)
 #define bitIsSet(variable, bit) variable & (1 << bit)
 
+class Cipher {
+public:
+    virtual void keyExpansion(uint8_t *expkey, const uint8_t *key) = 0;
 
+    virtual bool encrypt(const uint8_t *in_block, uint8_t *expkey, uint8_t *out_block) = 0;
+
+    virtual bool decrypt(const uint8_t *in_block, uint8_t *expkey, uint8_t *out_block) = 0;
+};
+
+class Hash {
+public:
+    virtual uint8_t hashDataBlockB(const uint8_t* buffer, uint8_t offset, uint8_t* key, uint8_t* hash) = 0; // TODO remove
+    virtual uint8_t hashDataB(const uint8_t* buffer, uint8_t offset, uint8_t len, uint8_t* hash) = 0;       // TODO remove
+    virtual bool hash(const uint8_t * const input, const uint16_t input_size, uint8_t *output, const uint16_t output_buufer_size) = 0;
+    virtual uint8_t hashSize() = 0;
+};
+
+class MAC {
+public:
+    virtual uint8_t macBuffer(const uint8_t* key, const uint8_t* buffer, uint8_t offset, uint8_t* pLen, uint8_t* mac) = 0;  // TODO remove
+    virtual bool computeMAC(const uint8_t *key, const uint8_t key_size, const uint8_t *input, const uint16_t input_size, uint8_t *output, const uint16_t output_buffer_size) = 0;
+    virtual uint8_t keySize() = 0;
+    virtual uint8_t macSize() = 0;
+};
 
 #endif //  PROTECTLAYERGLOBALS_H
