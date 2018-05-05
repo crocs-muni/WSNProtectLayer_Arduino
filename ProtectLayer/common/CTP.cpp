@@ -89,8 +89,6 @@ void CTP::setNodeID(uint8_t node_id)
 // extracts distance from packet
 void CTP::update(uint8_t *message)
 {
-    Serial.println(message[3]);
-
     // check header
     if(((SPHeader_t*)(message))->msgType != MSG_CTP){
         return;
