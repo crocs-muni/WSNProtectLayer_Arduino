@@ -55,7 +55,7 @@ typedef struct _key {
 /**
 *   The enumeration of possible message type
 */
-// taken from original WSNProtectLayer (https://github.com/crocs-muni/WSNProtectLayer)
+// Partially taken from original WSNProtectLayer (https://github.com/crocs-muni/WSNProtectLayer)
 typedef enum _MSG_TYPE {
     MSG_OTHER = 0,                      // message of other (unknown) type
     MSG_APP,                            // application message
@@ -72,10 +72,9 @@ typedef enum _MSG_TYPE {
 /**
     A structure representing security header
 */
-// taken from original WSNProtectLayer (https://github.com/crocs-muni/WSNProtectLayer
+// Partially taken from original WSNProtectLayer (https://github.com/crocs-muni/WSNProtectLayer
 typedef struct SPHeader {
     msg_type_t  msgType;                // type of message
-//    uint8_t privacyLevelIndicator;    // MSb is used as a flag for Phantom routing, other bits indicate privacy level applied
     uint8_t     sender;                 // sender ID
     uint8_t     receiver;               // receiver ID
 } SPHeader_t;
