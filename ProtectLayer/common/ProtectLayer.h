@@ -14,7 +14,7 @@
 #include "KeyDistrib.h"
 #include "CTP.h"
 
-#undef __linux__ // TODO! REMOVE - just for VS Code syntax highliting
+// #undef __linux__ // TODO! REMOVE - just for VS Code syntax highlighting
 
 #ifdef __linux__
 #include <string>
