@@ -26,6 +26,8 @@
 #define DISC_NEIGHBOR_RSP_TIME  50      // time a node waits for a response
 #define DISC_ROUNDS_NUM         4       // number of n.d. rounds
 
+#define UTESLA_KEY_VALID_PERIOD 10000   // time that the uTESLA key is valid
+
 #define DEFAULT_REQ_ACK         0       // 1 if acknowledgements are required, 0 otherwise
 
 #define NODE_RECV_TIMEOUT_MS    100     // timeout for receive() ProtectLayer::receuive() method

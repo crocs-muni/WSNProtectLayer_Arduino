@@ -1,8 +1,6 @@
 
 \.vscode/
 
-ProtectLayer/BS_host/WSNPL_BS
-
 *.o
 
 *.a

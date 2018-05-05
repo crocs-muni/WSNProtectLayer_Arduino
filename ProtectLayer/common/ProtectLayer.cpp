@@ -388,6 +388,11 @@ uint8_t ProtectLayer::receive(uint8_t *buffer, uint8_t buff_size, uint8_t *recei
 
 #ifdef ENABLE_UTESLA
     if(header->msgType == MSG_UTESLA){
+        // ignore messages if the key is already invalid
+        if(millis() - m_utesla.getLastKeyUpdate() != UTESLA_KEY_VALID_PERIOD){
+            return FAIL;
+        }
+
         // ignore already received message
         // TODO use a sequence number or something like that - this will not work in some cases
         if(rcvd_buff[16] == m_received[0]){

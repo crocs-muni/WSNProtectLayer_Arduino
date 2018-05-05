@@ -15,7 +15,7 @@
 
 #include "common.h"
 
-uTeslaClient::uTeslaClient(int8_t *eeprom_address, Hash *hash, MAC *mac): m_hash(hash), m_mac(mac), m_round(0)
+uTeslaClient::uTeslaClient(int8_t *eeprom_address, Hash *hash, MAC *mac): m_hash(hash), m_mac(mac), m_round(0), m_last_key_update(0)
 {
     // read key from the EEPROM
     eeprom_read_block(m_current_key, eeprom_address, m_hash->hashSize());
@@ -58,9 +58,9 @@ uint8_t uTeslaClient::updateKey(const uint8_t* new_key)
 	for(int i=0;i<MAX_NUM_MISSED_ROUNDS;i++){
 		m_hash->hash(hash_prev, m_hash_size, hash_next, m_hash_size);
 		if(!memcmp(m_current_key, hash_next, m_hash_size)){
-            // m_round++;
             m_round += i + 1;
             memcpy(m_current_key, new_key, m_hash_size);
+            m_last_key_update = millis();
 			return SUCCESS;
 		}
 
@@ -91,6 +91,11 @@ uint8_t uTeslaClient::verifyMAC(const uint8_t* data, const uint16_t data_len, co
 uint8_t uTeslaClient::verifyMessage(const uint8_t *data, const uint8_t data_size)
 {
     return verifyMAC(data, data_size - m_mac_size, data + data_size - m_mac_size);
+}
+
+uint32_t uTeslaClient::getLastKeyUpdate()
+{
+    return m_last_key_update;
 }
 
 #endif // __linux__

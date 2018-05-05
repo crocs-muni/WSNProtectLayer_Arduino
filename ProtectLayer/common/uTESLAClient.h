@@ -38,6 +38,7 @@ private:
     uint8_t         m_mac_key_size;                     // size of a MAC function key
     uint8_t         m_mac_size;                         // size of a MAC function output
     uint8_t         m_working_buffer[WORKING_BUFF_SIZE];// buffer for different computations
+    uint32_t        m_last_key_update;
 
 public:
     /**
@@ -102,6 +103,13 @@ public:
      * @return uint8_t  SUCCESS or FAIL
      */
     uint8_t verifyMessage(const uint8_t *data, const uint8_t data_size);
+
+    /**
+     * @brief Get time of the last key update
+     * 
+     * @return uint32_t Time of the last key update
+     */
+    uint32_t getLastKeyUpdate();
 };
 
 #endif // __linux__
