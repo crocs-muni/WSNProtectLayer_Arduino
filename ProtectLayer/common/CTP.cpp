@@ -165,8 +165,8 @@ uint8_t CTP::startCTP(uint32_t duration)
     }
 
     if(m_distance >= INVALID_DISTANCE || m_parent_id == 0){
-        Serial.println(m_distance);
-        Serial.println(m_parent_id);
+        // Serial.println(m_distance);
+        // Serial.println(m_parent_id);
         return FAIL;
     }
 

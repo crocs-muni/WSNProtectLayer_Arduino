@@ -15,7 +15,7 @@
 uint8_t node_id     = 2;        // TODO use ProtectLayer::getNodeID()
 uint8_t rcvd_buffer[BUFFER_SIZE];
 uint8_t uTESLA_buffer[BUFFER_SIZE];
-uint8_t uTESLA_size;
+uint8_t uTESLA_size = 0;
 
 ProtectLayer protect_layer;
 

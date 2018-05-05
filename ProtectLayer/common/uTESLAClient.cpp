@@ -61,14 +61,10 @@ uint8_t uTeslaClient::updateKey(const uint8_t* new_key)
             m_round += i + 1;
             memcpy(m_current_key, new_key, m_hash_size);
             m_last_key_update = millis();
+
 			return SUCCESS;
 		}
 
-        // // TODO! REMOVE
-        // printBuffer(new_key, 16);
-        // printBuffer(hash_next, 16);
-        // printBuffer(m_current_key, 16);
-		
 		memcpy(hash_prev, hash_next, m_hash_size);
 	}
 
@@ -80,7 +76,7 @@ uint8_t uTeslaClient::verifyMAC(const uint8_t* data, const uint16_t data_len, co
     memset(m_working_buffer, 0, WORKING_BUFF_SIZE);
 
     m_mac->computeMAC(m_current_key, m_mac_key_size, data, data_len, m_working_buffer, m_mac_size);
-
+    
     if(!memcmp(m_working_buffer, mac, m_mac_size)){
         return SUCCESS;
     }
@@ -90,6 +86,10 @@ uint8_t uTeslaClient::verifyMAC(const uint8_t* data, const uint16_t data_len, co
 
 uint8_t uTeslaClient::verifyMessage(const uint8_t *data, const uint8_t data_size)
 {
+    if(data_size < m_mac_size){
+        return FAIL;
+    }
+
     return verifyMAC(data, data_size - m_mac_size, data + data_size - m_mac_size);
 }
 

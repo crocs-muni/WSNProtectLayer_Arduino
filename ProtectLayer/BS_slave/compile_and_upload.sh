@@ -6,7 +6,7 @@ CLASS=cz.muni.fi.crocs.EduHoc.Main
 #PROJECT=/home/martin/git/wsnpl_arduino/ProtectLayer/BS_slave/
 PROJECT="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
-echo "$J7" > $PATH_FILE
+echo "$J6" > $PATH_FILE
 
 #echo "$J1" > $PATH_FILE
 #echo "$J2" >> $PATH_FILE
