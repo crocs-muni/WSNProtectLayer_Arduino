@@ -2,5 +2,7 @@
 /dev/serial/by-id/usb-FTDI_FT232R_USB_UART_AI03D99W-if00-port0 3
 /dev/serial/by-id/usb-FTDI_FT232R_USB_UART_AI03D9HW-if00-port0 4
 /dev/serial/by-id/usb-FTDI_FT232R_USB_UART_AI03D9Z7-if00-port0 5
+/dev/serial/by-id/usb-FTDI_FT232R_USB_UART_AI03D9ZF-if00-port0 6
 /dev/serial/by-id/usb-FTDI_FT232R_USB_UART_AI03D9ZT-if00-port0 7
 /dev/serial/by-id/usb-FTDI_FT232R_USB_UART_AI03DAQG-if00-port0 8
+/dev/serial/by-id/usb-FTDI_FT232R_USB_UART_AI03DB3G-if00-port0 9
