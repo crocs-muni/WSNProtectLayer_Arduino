@@ -1,3 +1,11 @@
+/**
+ * @brief Configurator for JeeLink devices to set nodes' IDs, crypto keys, etc.
+ * 
+ * @file    configurator.cpp
+ * @author  Martin Sarkany
+ * @date    05/2018
+ */
+
 #include "configurator.h"
 #include "conf_common.h"
 
@@ -56,10 +64,12 @@ bool Configurator::generateuTESLAKeys(std::ifstream &random_file)
     AES aes;
     AEShash hash(&aes);
 
-    uint8_t tmp_hash[MAX_KEY_SIZE];
+    uint8_t tmp_hash[MAX_KEY_SIZE]; // hate the tmp* name but couldn't find anything better - it's an intermediate hash value
+    // read a random number
     random_file.read(reinterpret_cast<char*>(m_uTESLA_key), m_key_size);
     memcpy(tmp_hash, m_uTESLA_key, m_key_size);
 
+    // compute last hash chain value
     for(int i=1;i<m_uTESLA_rounds + 1;i++){
         if(!hash.hash(tmp_hash, m_key_size, m_uTESLA_last_element, MAX_KEY_SIZE)){
             std::cerr << "Failed to compute hash" << std::endl;
@@ -77,13 +87,17 @@ bool Configurator::readID(std::string &line, int *id)
     std::string delimiter = " \t";
 
     size_t pos = 0;
+    // find the last space
     if((pos = line.find_last_of(delimiter)) != std::string::npos) {
+        // copy the ID
         std::string str_id = line.substr(pos + 1);
         try{
+            // make it an integer
             *id = std::stoi(str_id);
         } catch(std::invalid_argument &ex){
             return false;
         }
+        // cut off the ID
         line = line.substr(0, pos);
 
         return true;
@@ -95,22 +109,28 @@ bool Configurator::readID(std::string &line, int *id)
 Configurator::Configurator(std::string &in_filename, const int uTESLA_rounds, const int key_size):
 m_key_size(key_size), m_uTESLA_rounds(uTESLA_rounds)
 {
+    // if the key size is specify, generate new keys
+    // otherwise (else branch) load them from a file
     if(key_size){
+        // init number of nodes
         m_nodes_num = 0;
 
+        // open configuration file
         std::ifstream paths_file(in_filename.c_str(), std::ifstream::in);
-
         if(!paths_file.is_open()){
             std::stringstream err;
             err << "file " << in_filename << " does not exist" << std::endl;
             throw std::runtime_error(err.str());
         }
 
+        // open /dev/urandom
         std::ifstream random_file("/dev/urandom", std::ifstream::in);
         if(!paths_file.is_open()){
+            paths_file.close();
             throw std::runtime_error("Failed to open /dev/urandom");
         } 
 
+        // for each line in config file, create a Node structure - containing name, ID and a pairwise key with BS
         Node node;
         std::string device_name;
         while(getline(paths_file, device_name)){
@@ -120,16 +140,22 @@ m_key_size(key_size), m_uTESLA_rounds(uTESLA_rounds)
 
             int node_id = 0;
             if(!readID(device_name, &node_id)){
+                paths_file.close();
+                random_file.close();
                 throw std::runtime_error("Device ID not supplied for " + device_name);
             }
 
             if(node_id == BS_NODE_ID){
                 std::stringstream err;
                 err << "Device ID " << BS_NODE_ID << " is reserved for BS";
+                paths_file.close();
+                random_file.close();
                 throw std::runtime_error(err.str());
             }
             
             if(!generateBSKey(node, node_id, device_name, random_file)){
+                paths_file.close();
+                random_file.close();
                 throw std::runtime_error("Failed to generate BS key");
             }
             
@@ -137,22 +163,26 @@ m_key_size(key_size), m_uTESLA_rounds(uTESLA_rounds)
             m_nodes.push_back(node);
         }
 
+        // generate pairwise keys between nodes
         if(!generatePairwiseKeys(random_file)){
             throw std::runtime_error("Failed to generate random keys");
         }
 
+        // generate uTESLA key and compute the last hash chain element
         if(!generateuTESLAKeys(random_file)){
             throw std::runtime_error("Failed to generate random keys");
         }
 
+        // close files
         paths_file.close();
         random_file.close();
 
-
+        // set the number of nodes
         if((m_nodes_num = m_nodes.size()) < 1){
             throw std::runtime_error("No devices in config file");
         }
     } else {
+        // load already generated keys from a file
         if(!loadFromFile(in_filename)){
             throw std::runtime_error("Failed to load keys from file");
         }
@@ -556,14 +586,6 @@ bool checkResponse(int fd)
         }
     }        
 }
-
-// bool Configurator::requestKey(std::string device)
-// {
-//     // TODO open port
-//     // requestKey(fd);
-//     // TODO close port
-//     return true;
-// }
 
 bool Configurator::requestKey(int fd, uint8_t node_id)
 {

@@ -1,3 +1,11 @@
+/**
+ * @brief Implementation of a slave device for Linux base station
+ * 
+ * @file    BS_slave.cpp
+ * @author  Martin Sarkany
+ * @date    05/2018
+ */
+
 #include <Arduino.h>
 #include <EEPROM.h>
 #include <RF12.h>

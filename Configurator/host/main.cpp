@@ -1,3 +1,11 @@
+/**
+ * @brief Configurator for JeeLink devices
+ * 
+ * @file    main.cpp
+ * @author  Martin Sarkany
+ * @date    05/2018
+ */
+
 #include "configurator.h"
 
 #include <iostream>
