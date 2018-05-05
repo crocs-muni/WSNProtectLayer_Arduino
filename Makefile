@@ -1,9 +1,15 @@
+ifdef DEBUG
+MAKE=make DEBUG=$(DEBUG)
+else
+MAKE=make
+endif
+
+
 all:
-	make -C ProtectLayer/common/
-	make -C Configurator
-	make -C ProtectLayer
-#	make -C Configurator
+	$(MAKE) -C ProtectLayer/common/
+	$(MAKE) -C Configurator
+	$(MAKE) -C ProtectLayer
 
 clean:
-	make -C Configurator clean
-	make -C ProtectLayer clean
+	$(MAKE) -C Configurator clean
+	$(MAKE) -C ProtectLayer clean
