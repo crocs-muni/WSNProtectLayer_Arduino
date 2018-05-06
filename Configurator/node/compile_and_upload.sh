@@ -3,7 +3,6 @@
 PATH_FILE=$EDU_HOC_HOME/config/relay_ar_paths.txt
 JAR=/home/martin/Desktop/Edu-hoc/JeeTool/JeeTool/dist/JeeTool.jar
 CLASS=cz.muni.fi.crocs.EduHoc.Main
-#PROJECT=/home/martin/git/wsnpl_arduino/Configurator/node
 PROJECT="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
 

@@ -27,6 +27,26 @@
 
 #define MAX_MESSAGE_LENGTH  256
 
+/**
+ * @brief Write buffer to file. In case of error, print error message and return false.
+ * 
+ */
+#define write_buff(file, buffer, size, err_msg)                 \
+    file.write(reinterpret_cast<const char*>(buffer), size);    \
+    if(file.fail()){                                            \
+        std::cerr << err_msg << std::endl;                      \
+        return false;                                           \
+    }
+
+#define read_buff(file, buffer, size, err_msg)                  \
+    file.read(reinterpret_cast<char*>(buffer), size);           \
+    if(file.fail()){                                            \
+        std::cerr << err_msg << std::endl;                      \
+        return false;                                           \
+    }
+    
+    
+
 bool Configurator::generateBSKey(Node &node, const uint8_t ID, const std::string &device, std::ifstream &random_file)
 {
     uint8_t key_value[MAX_KEY_SIZE];
@@ -187,21 +207,14 @@ m_key_size(key_size), m_uTESLA_rounds(uTESLA_rounds)
             throw std::runtime_error("Failed to load keys from file");
         }
     }
+
+    computeNeighborsList();
 }
 
 bool Configurator::writeHeader(std::ofstream &output_file)
 {
-    output_file.write(reinterpret_cast<char*>(&m_nodes_num), sizeof(m_nodes_num));
-    if(output_file.fail()){
-        std::cerr << "Failed to write number of keys" << std::endl;
-        return false;
-    }
-
-    output_file.write(reinterpret_cast<char*>(&m_key_size), sizeof(m_key_size));
-    if(output_file.fail()){
-        std::cerr << "Failed to write node size" << std::endl;
-        return false;
-    }
+    write_buff(output_file, &m_nodes_num, sizeof(m_nodes_num), "Failed to write number of keys");
+    write_buff(output_file, &m_key_size, sizeof(m_key_size), "Failed to write key size");
 
     output_file.flush();
     return true;
@@ -210,29 +223,11 @@ bool Configurator::writeHeader(std::ofstream &output_file)
 bool Configurator::writeNode(std::ofstream &output_file, const Node &node)
 {
     int dev_name_size = node.device.length() + 1;
-    output_file.write(reinterpret_cast<char*>(&dev_name_size), sizeof(int));
-    if(output_file.fail()){
-        std::cerr << "Failed to write device name length" << std::endl;
-        return false;
-    }
-
-    output_file.write(node.device.c_str(), dev_name_size);    
-    if(output_file.fail()){
-        std::cerr << "Failed to write device name" << std::endl;
-        return false;
-    }
-
-    output_file.write(reinterpret_cast<const char*>(&node.ID), sizeof(node.ID));
-    if(output_file.fail()){
-        std::cerr << "Failed to write node ID" << std::endl;
-        return false;
-    }
-
-    output_file.write(reinterpret_cast<const char*>(node.BS_key.data()), node.BS_key.size());
-    if(output_file.fail()){
-        std::cerr << "Failed to write node value" << std::endl;
-        return false;
-    }
+    
+    write_buff(output_file, &dev_name_size, sizeof(int), "Failed to write device name length");
+    write_buff(output_file, node.device.c_str(), dev_name_size, "Failed to write device name");
+    write_buff(output_file, &node.ID, sizeof(node.ID), "Failed to write node ID");
+    write_buff(output_file, node.BS_key.data(), node.BS_key.size(), "Failed to write BS key value");
 
     output_file.flush();
 
@@ -242,23 +237,9 @@ bool Configurator::writeNode(std::ofstream &output_file, const Node &node)
 
 bool Configurator::writeuTESLAKeys(std::ofstream &output_file)
 {
-    output_file.write(reinterpret_cast<const char*>(&m_uTESLA_rounds), sizeof(m_uTESLA_rounds));
-    if(output_file.fail()){
-        std::cerr << "Failed to write number of uTESLA rounds" << std::endl;
-        return false;
-    }
-
-    output_file.write(reinterpret_cast<const char*>(m_uTESLA_key), m_key_size);
-    if(output_file.fail()){
-        std::cerr << "Failed to write first uTESLA key" << std::endl;
-        return false;
-    }
-    
-    output_file.write(reinterpret_cast<const char*>(m_uTESLA_last_element), m_key_size);
-    if(output_file.fail()){
-        std::cerr << "Failed to write last uTESLA key" << std::endl;
-        return false;
-    }
+    write_buff(output_file, &m_uTESLA_rounds, sizeof(m_uTESLA_rounds), "Failed to write number of uTESLA rounds");
+    write_buff(output_file, m_uTESLA_key, m_key_size, "Failed to write first uTESLA key");
+    write_buff(output_file, m_uTESLA_last_element, m_key_size, "Failed to write last uTESLA key");
 
     return true;
 }
@@ -305,17 +286,8 @@ bool Configurator::saveToFile(const std::string &filename)
 
 bool Configurator::readHeader(std::ifstream &input_file)
 {
-    input_file.read(reinterpret_cast<char*>(&m_nodes_num), sizeof(m_nodes_num));
-    if(input_file.fail()){
-        std::cerr << "Failed to read number of keys" << std::endl;
-        return false;
-    }
-    
-    input_file.read(reinterpret_cast<char*>(&m_key_size), sizeof(m_key_size));
-    if(input_file.fail()){
-        std::cerr << "Failed to read node size" << std::endl;
-        return false;
-    }
+    read_buff(input_file, &m_nodes_num, sizeof(m_nodes_num), "Failed to read number of keys");
+    read_buff(input_file, &m_key_size, sizeof(m_key_size), "Failed to read key size");
 
     return true;
 }
@@ -325,33 +297,17 @@ bool Configurator::readNode(std::ifstream &input_file, Node &node)
     int dev_name_size = node.device.length() + 1;
     char device_name[256];  // TODO define for max device name length
 
-    input_file.read(reinterpret_cast<char*>(&dev_name_size), sizeof(int));
-    if(input_file.fail()){
-        std::cerr << "Failed to read device name length" << std::endl;
-        return false;
-    }
+    read_buff(input_file, &dev_name_size, sizeof(int), "Failed to read device name length");
 
     memset(device_name, 0, 256);    // TODO use define for max device name length
-    input_file.read(device_name, dev_name_size);    
-    if(input_file.fail()){
-        std::cerr << "Failed to read device name" << std::endl;
-        return false;
-    }
+    read_buff(input_file, device_name, dev_name_size, "Failed to read device name");
     node.device = device_name;
 
-    input_file.read(reinterpret_cast<char*>(&node.ID), sizeof(node.ID));
-    if(input_file.fail()){
-        std::cerr << "Failed to read node ID" << std::endl;
-        return false;
-    }
 
-    // reusing device name buffer for node value
+    read_buff(input_file, &node.ID, sizeof(node.ID), "Failed to read node ID");
+    
     memset(device_name, 0, 256);    // TODO use define for max device name length
-    input_file.read(device_name, m_key_size);
-    if(input_file.fail()){
-        std::cerr << "Failed to read node value" << std::endl;
-        return false;
-    }
+    read_buff(input_file, device_name, m_key_size, "Failed to read BS key");
 
     node.BS_key.assign(device_name, device_name + m_key_size);
 
@@ -360,23 +316,9 @@ bool Configurator::readNode(std::ifstream &input_file, Node &node)
 
 bool Configurator::readuTESLAKeys(std::ifstream &input_file)
 {
-    input_file.read(reinterpret_cast<char*>(&m_uTESLA_rounds), sizeof(m_uTESLA_rounds));
-    if(input_file.fail()){
-        std::cerr << "Failed to read number of uTESLA rounds" << std::endl;
-        return false;
-    }
-
-    input_file.read(reinterpret_cast<char*>(m_uTESLA_key), m_key_size);
-    if(input_file.fail()){
-        std::cerr << "Failed to read first uTESLA key" << std::endl;
-        return false;
-    }
-
-    input_file.read(reinterpret_cast<char*>(m_uTESLA_last_element), m_key_size);
-    if(input_file.fail()){
-        std::cerr << "Failed to read last uTESLA key" << std::endl;
-        return false;
-    }
+    read_buff(input_file, &m_uTESLA_rounds, sizeof(m_uTESLA_rounds), "Failed to read number of uTESLA rounds");
+    read_buff(input_file, m_uTESLA_key, m_key_size, "Failed to read first uTESLA key");
+    read_buff(input_file, m_uTESLA_last_element, m_key_size, "Failed to read last uTESLA key");
 
     return true;
 }
@@ -594,7 +536,7 @@ bool Configurator::requestKey(int fd, uint8_t node_id)
     memset(buffer, 0, 32);
     buffer[0] = 2;
     buffer[1] = 2;
-    buffer[2] = MSG_REQ_KEY;
+    buffer[2] = CFG_REQ_KEY;
     buffer[3] = node_id;
 
     write(fd, buffer, 4);
@@ -620,6 +562,52 @@ bool Configurator::requestKey(int fd, uint8_t node_id)
     return true;
 }
 
+void Configurator::computeNeighborsList()
+{
+    for(int i=0;i<m_nodes_num;i++){
+        setBit(m_neighbors, m_nodes[i].ID);
+    }
+}
+
+
+bool Configurator::uploadBuffer(int device_fd, uint8_t msg_type, const uint8_t *buffer, uint8_t size, int node_index)
+{
+    Node &node = m_nodes[node_index];
+
+    if(!buffer){
+        std::cerr << "NULL buffer" << std::endl;
+        return false;
+    }
+
+    uint8_t message_buffer[MAX_MESSAGE_LENGTH + 2];
+    uint8_t message_size = size + 3;
+
+    message_buffer[0] = size + 1;
+    message_buffer[1] = size + 1;
+    message_buffer[2] = msg_type;
+    memcpy(message_buffer + 3, buffer, size);
+
+    int len = 0;
+    if((len = write(device_fd, message_buffer, message_size)) != message_size){
+        std::cerr << "Failed to write buffer to node " << node.device << std::endl;
+        if(len > -1){
+            std::cerr << len << " bytes were written" << std::endl;
+        }
+        return false;
+    }
+
+    tcdrain(device_fd);
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    if(!checkResponse(device_fd)){
+        std::cerr << "Response failure when configuring node " << node.device << std::endl;
+        close(device_fd);
+        return false;
+    }
+
+    return true;
+}
+
+// TODO! create function for repeating code
 bool Configurator::uploadSingle(const Node &node, int node_index)   // TODO remove node, keep index
 {
 #ifdef DEBUG
@@ -632,93 +620,45 @@ bool Configurator::uploadSingle(const Node &node, int node_index)   // TODO remo
         return false;
     }
 
-    uint8_t message_buffer[MAX_MESSAGE_LENGTH];
-    int rval;
-
-
+    uint8_t message_buffer[MAX_MESSAGE_LENGTH + 2];
+    
     read(fd, message_buffer, MAX_MESSAGE_LENGTH);
-    // upload node ID
-    memset(message_buffer, 0, MAX_MESSAGE_LENGTH);
-    message_buffer[0] = MSG_TYPE_SIZE + sizeof(node.ID);
-    message_buffer[1] = message_buffer[0];
-    message_buffer[2] = MSG_ID;
-    memcpy(message_buffer + 3, &node.ID, sizeof(node.ID));
-    if((rval = write(fd, message_buffer, message_buffer[0] + 2)) != message_buffer[0] + 2){
-        std::cerr << "Failed to write ID to node " << node.device << std::endl;
-        if(rval > -1){
-            std::cerr << rval << " bytes were written" << std::endl;
-        }
-        close(fd);
-        return false;
-    }
-    tcdrain(fd);
-    std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
-    if(!checkResponse(fd)){
+    // upload node ID
+    if(!uploadBuffer(fd, CFG_ID, &node.ID, sizeof(node.ID), node_index)){
         std::cerr << "Failed to configure ID for " << node.device << std::endl;
         close(fd);
         return false;
     }
 
-
-    read(fd, message_buffer, MAX_MESSAGE_LENGTH);
     // upload BS key
-    memset(message_buffer, 0, MAX_MESSAGE_LENGTH);
-    message_buffer[0] = MSG_TYPE_SIZE + m_key_size;
-    message_buffer[1] = message_buffer[0];
-    message_buffer[2] = MSG_BS_KEY;
-    memcpy(message_buffer + 3, node.BS_key.data(), m_key_size);
-    if((rval = write(fd, message_buffer, message_buffer[0] + 2)) != message_buffer[0] + 2){
-        std::cerr << "Failed to write BS key to node " << node.device << std::endl;
-        if(rval > -1){
-            std::cerr << rval << " bytes were written" << std::endl;
-        }
-        close(fd);
-        return false;
-    }
-    tcdrain(fd);
-    std::this_thread::sleep_for(std::chrono::milliseconds(100));
-
-    if(!checkResponse(fd)){
+    if(!uploadBuffer(fd, CFG_BS_KEY, node.BS_key.data(), m_key_size, node_index)){
         std::cerr << "Failed to configure BS key for " << node.device << std::endl;
         close(fd);
         return false;
     }
 
-    // upload pairwise keys
-    memset(message_buffer, 0, MAX_MESSAGE_LENGTH);
-    message_buffer[0] = MSG_TYPE_SIZE + 1 /*node ID*/ + m_key_size;
-    message_buffer[1] = message_buffer[0];
-    message_buffer[2] = MSG_NODE_KEY;
 
+    // upload pairwise keys
     for(int i=0;i<m_nodes_num;i++){
         // skip itself
         if(i != node_index){
-            message_buffer[3] = m_nodes[i].ID;
+            uint8_t key_buff[MAX_KEY_SIZE + 1];
+            key_buff[0] = m_nodes[i].ID;
+
             if(node_index < i){
 #ifdef DEBUG
                 std::cout << "Uploading key [" << i << "][" << node_index << "]" << std::endl;
 #endif
-                memcpy(message_buffer + 4, m_pairwise_keys[i][node_index].data(), m_key_size);
+                memcpy(key_buff + 1, m_pairwise_keys[i][node_index].data(), m_key_size);
             } else {
 #ifdef DEBUG
                 std::cout << "Uploading key [" << node_index << "][" << i << "]" << std::endl;
 #endif
-                memcpy(message_buffer + 4, m_pairwise_keys[node_index][i].data(), m_key_size);
+                memcpy(key_buff + 1, m_pairwise_keys[node_index][i].data(), m_key_size);
             }
 
-            if((rval = write(fd, message_buffer, message_buffer[0] + 2)) != message_buffer[0] + 2){
-                std::cerr << "Failed to write pairwise key to node " << node.device << std::endl;
-                if(rval > -1){
-                    std::cerr << rval << " bytes were written" << std::endl;
-                }
-                close(fd);
-                return false;
-            }
-            tcdrain(fd);
-            std::this_thread::sleep_for(std::chrono::milliseconds(100));
-
-            if(!checkResponse(fd)){
+            if(!uploadBuffer(fd, CFG_NODE_KEY, key_buff, m_key_size + 1, node_index)){
                 std::cerr << "Failed to configure pairwise key for " << node.device << std::endl;
                 close(fd);
                 return false;
@@ -726,28 +666,17 @@ bool Configurator::uploadSingle(const Node &node, int node_index)   // TODO remo
         }
     }
 
-    memset(message_buffer, 0, MAX_MESSAGE_LENGTH);
-    message_buffer[0] = MSG_TYPE_SIZE + m_key_size;
-    message_buffer[1] = message_buffer[0];
-    message_buffer[2] = MSG_UTESLA_KEY;
-    memcpy(message_buffer + 3, m_uTESLA_last_element, m_key_size);
-    if((rval = write(fd, message_buffer, message_buffer[0] + 2)) != message_buffer[0] + 2){
-        std::cerr << "Failed to write uTESLA key to node " << node.device << std::endl;
-        if(rval > -1){
-            std::cerr << rval << " bytes were written" << std::endl;
-        }
-        close(fd);
-        return false;
-    }
-    tcdrain(fd);
-    std::this_thread::sleep_for(std::chrono::milliseconds(100));
-
-    if(!checkResponse(fd)){
+    if(!uploadBuffer(fd, CFG_UTESLA_KEY, m_uTESLA_last_element, m_key_size, node_index)){
         std::cerr << "Failed to configure uTESLA key for " << node.device << std::endl;
         close(fd);
         return false;
     }
 
+    if(!uploadBuffer(fd, CFG_NEIGHBORS, reinterpret_cast<uint8_t*>(&m_neighbors), sizeof(m_neighbors), node_index)){
+        std::cerr << "Failed to configure neighbors list for " << node.device << std::endl;
+        close(fd);
+        return false;
+    }
 
 #ifdef DEBUG
     if(m_nodes_num > 1){

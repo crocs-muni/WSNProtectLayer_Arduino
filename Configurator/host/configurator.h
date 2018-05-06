@@ -18,8 +18,9 @@
 #include <stdint.h>
 
 #ifndef MAX_KEY_SIZE
-#define MAX_KEY_SIZE        64
-#endif
+#define MAX_KEY_SIZE    16
+#endif  // MAX_KEY_SIZE
+
 
 
 struct Node {
@@ -41,6 +42,7 @@ private:
     int                 m_uTESLA_rounds;                        // number of uTESLA rounds
     uint8_t             m_uTESLA_key[MAX_KEY_SIZE];             // first uTESLA hash chain element
     uint8_t             m_uTESLA_last_element[MAX_KEY_SIZE];    // last uTESLA hash chain element
+    uint32_t            m_neighbors;                            // each bit representing existence of a node - pre-prepared to be uploaded to each node
 
     /**
      * @brief Parse node's ID from configuration line and cut it out
@@ -166,6 +168,19 @@ private:
     bool loadFromFile(const std::string &filename);
 
     /**
+     * @brief Upload a buffer to be saved in a node and wait for a response
+     * 
+     * @param device_fd     Device file descriptor
+     * @param msg_type      Type of data
+     * @param buffer        Data to be saved
+     * @param size          Size of data
+     * @param node_index    Index of a node in a vector
+     * @return true         Success
+     * @return false        Failure
+     */
+    bool uploadBuffer(int device_fd, uint8_t msg_type, const uint8_t *buffer, uint8_t size, int node_index);
+
+    /**
      * @brief Upload configuration to a single node
      * 
      * @param node          Node structure
@@ -184,6 +199,13 @@ private:
      * @return false        Failure
      */
     bool requestKey(int fd, uint8_t node_id);
+
+    /**
+     * @brief Prepare integer describing all configured devices
+     * 
+     */
+    void computeNeighborsList();
+
 public:
     
     /**

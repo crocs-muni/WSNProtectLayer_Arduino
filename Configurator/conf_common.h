@@ -7,17 +7,19 @@
 #define KEY_SIZE 16
 #endif
 
-#define CONFIG_START_ADDRESS    (uint8_t*)0x40
+#define NEIGHBORS_ADDRESS       (uint8_t*)0x3C
+#define CONFIG_START_ADDRESS    (uint8_t*)0x40  // TODO rename (KEY_START_ADDRESS?)
 #define UTESLA_KEY_ADDRESS      (uint8_t*)0x1F4
 
 
-#define MSG_TYPE_SIZE   1
+#define CFG_TYPE_SIZE   1
 
-#define MSG_ID          0x58
-#define MSG_BS_KEY      1
-#define MSG_NODE_KEY    2
-#define MSG_UTESLA_KEY  3
-#define MSG_REQ_KEY     4
+#define CFG_ID          0x58
+#define CFG_BS_KEY      1
+#define CFG_NODE_KEY    2
+#define CFG_UTESLA_KEY  3
+#define CFG_REQ_KEY     4
+#define CFG_NEIGHBORS   5
 
 #define REPLY_OK                0
 #define REPLY_DONE              1

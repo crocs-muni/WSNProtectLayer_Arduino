@@ -44,6 +44,11 @@ void saveuTESLAKey(uint8_t *key)
     eeprom_update_block(key, UTESLA_KEY_ADDRESS, KEY_SIZE);
 }
 
+void saveNeighbors(uint8_t *neighbors)
+{
+    eeprom_update_block(neighbors, NEIGHBORS_ADDRESS, 4);
+}
+
 void readNodeKey(uint8_t *key, uint8_t node_id)
 {
     eeprom_read_block(key, CONFIG_START_ADDRESS + (node_id * KEY_SIZE), KEY_SIZE);
@@ -72,40 +77,47 @@ void loop()
             return;
         }
 
-        if(buffer[0] == MSG_ID){
+        if(buffer[0] == CFG_ID){
             if(len1 < 2){
                 reply(REPLY_ERR_MSG_SIZE); // TODO maybe different error code
                 return;
             }
             saveNodeID(buffer[1]);
             reply_ok();
-        } else if(buffer[0] == MSG_BS_KEY){
+        } else if(buffer[0] == CFG_BS_KEY){
             if(len1 < KEY_SIZE + 1){
                 reply(REPLY_ERR_MSG_SIZE); // TODO maybe different error code
                 return;
             }
             saveBSKey(buffer + 1);
             reply_ok();
-        } else if(buffer[0] == MSG_NODE_KEY){
+        } else if(buffer[0] == CFG_NODE_KEY){
             if(len1 < KEY_SIZE + 2){
                 reply(REPLY_ERR_MSG_SIZE); // TODO maybe different error code
                 return;
             }
             saveNodeKey(buffer + 2, buffer[1]);
             reply_ok();
-        } else if(buffer[0] == MSG_REQ_KEY){
+        } else if(buffer[0] == CFG_REQ_KEY){
             if(len1 < 2){
                 reply(REPLY_ERR_MSG_SIZE); // TODO maybe different error code
                 return;
             }
             readNodeKey(buffer, buffer[1]);
             Serial.write(buffer, KEY_SIZE);
-        } else if(buffer[0] == MSG_UTESLA_KEY){
+        } else if(buffer[0] == CFG_UTESLA_KEY){
             if(len1 < KEY_SIZE + 1){
                 reply(REPLY_ERR_MSG_SIZE); // TODO maybe different error code
                 return;
             }
             saveuTESLAKey(buffer + 1);
+            reply_ok();
+        } else if(buffer[0] == CFG_NEIGHBORS){
+            if(len1 < 4){
+                reply(REPLY_ERR_MSG_SIZE);
+                return;
+            }
+            saveNeighbors(buffer + 1);
             reply_ok();
         } else {
             reply(REPLY_ERR_MSG_TYPE);

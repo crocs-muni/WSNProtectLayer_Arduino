@@ -24,7 +24,7 @@ void printHelp(const char *appname)
         << "[ -k key_size ] [ -s key_output_file ] "
         << "[ -u ] [ -r uTESLA_rounds ] [ -h ]" << endl;
     cout << endl << "Configuration file pattern:" << endl
-        << "/path/to/device/ device_id" << endl;
+        << "/path/to/device/ device_id" << endl << endl;
     cout << "Either -g or -l must be specified to generate or load keys" << endl;
     cout << "Key size must be specified if generating new keys" << endl;
     cout << "-s, -u and -r are optional" << endl;
