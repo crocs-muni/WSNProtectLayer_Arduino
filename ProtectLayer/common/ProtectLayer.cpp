@@ -182,7 +182,7 @@ uint8_t ProtectLayer::getNodeID()
 #ifdef ENABLE_UTESLA
 // initialize also uTESLA
 ProtectLayer::ProtectLayer():
-m_hash(&m_aes), m_mac(&m_aes), m_keydistrib(&m_neighbors), m_crypto(&m_aes, &m_mac, &m_hash, &m_keydistrib), m_neighbors(0), m_utesla((int8_t*) 0x1F4, &m_hash, &m_mac)
+m_hash(&m_aes), m_mac(&m_aes), m_keydistrib(&m_neighbors), m_crypto(&m_aes, &m_mac, &m_hash, &m_keydistrib), m_neighbors(0), m_utesla(UTESLA_KEY_ADDRESS, &m_hash, &m_mac)
 #else
 // do not initialize uTESLA
 ProtectLayer::ProtectLayer():
@@ -583,10 +583,6 @@ uint8_t ProtectLayer::neighborHandshake(uint8_t node_id)
             if(memcmp(msg_buffer + SPHEADER_SIZE, &own_nonce, sizeof(uint32_t))){
                 return FAIL;
             }
-
-            // TODO! REMOVE
-            Serial.print("d");
-            Serial.println(node_id);
 
             if(m_keydistrib.deriveKeyToNode(node_id, random_buffer, 4 * sizeof(uint32_t), &m_mac) != SUCCESS){
                 Serial.print("fts");

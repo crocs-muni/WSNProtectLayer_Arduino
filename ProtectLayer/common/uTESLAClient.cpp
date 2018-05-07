@@ -15,7 +15,7 @@
 
 #include "common.h"
 
-uTeslaClient::uTeslaClient(int8_t *eeprom_address, Hash *hash, MAC *mac): m_hash(hash), m_mac(mac), m_round(0), m_last_key_update(0)
+uTeslaClient::uTeslaClient(uint8_t *eeprom_address, Hash *hash, MAC *mac): m_hash(hash), m_mac(mac), m_round(0), m_last_key_update(0)
 {
     // read key from the EEPROM
     eeprom_read_block(m_current_key, eeprom_address, m_hash->hashSize());

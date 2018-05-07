@@ -83,10 +83,6 @@ uint8_t KeyDistrib::getKeyToNodeB(uint8_t nodeID, PL_key_t** pNodeKey)
     }
 
     if(bitIsSet(*m_neighbors, nodeID)){
-        // TODO! REMOVE
-        Serial.print(nodeID);
-        Serial.println();
-        Serial.println(*m_neighbors, HEX);
         return getDerivedKeyToNodeB(nodeID, pNodeKey);
     }
 

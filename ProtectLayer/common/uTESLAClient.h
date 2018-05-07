@@ -48,7 +48,7 @@ public:
      * @param hash              Hash class
      * @param mac               MAC class
      */
-    uTeslaClient(int8_t *eeprom_address, Hash *hash, MAC *mac);
+    uTeslaClient(uint8_t *eeprom_address, Hash *hash, MAC *mac);
 
     /**
      * @brief Destructor
