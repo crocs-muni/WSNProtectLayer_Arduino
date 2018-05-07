@@ -584,7 +584,13 @@ uint8_t ProtectLayer::neighborHandshake(uint8_t node_id)
                 return FAIL;
             }
 
+            // TODO! REMOVE
+            Serial.print("d");
+            Serial.println(node_id);
+
             if(m_keydistrib.deriveKeyToNode(node_id, random_buffer, 4 * sizeof(uint32_t), &m_mac) != SUCCESS){
+                Serial.print("fts");
+                Serial.println(node_id);
                 return FAIL;
             }
 
@@ -682,6 +688,8 @@ uint8_t ProtectLayer::neighborHandshakeResponse(uint8_t *msg_buffer, uint8_t msg
         // send
         rf12_sendNow(rf12_header, msg_buffer, msg_size);
 
+        setBit(m_neighbors, other_id);
+
         return SUCCESS;
 
     }
@@ -717,7 +725,7 @@ uint8_t ProtectLayer::discoverNeighbors()
             // receive() automatically responds to handshake request
             uint8_t foo;
             // passing 0 buffer size in case other message arrives
-            receive(&foo, 0, &foo, 100);
+            receive(&foo, 0, &foo, 150);
 
             i = (i + 1) % (MAX_NODE_NUM + 1);
         }

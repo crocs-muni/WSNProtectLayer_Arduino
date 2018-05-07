@@ -83,11 +83,15 @@ uint8_t KeyDistrib::getKeyToNodeB(uint8_t nodeID, PL_key_t** pNodeKey)
     }
 
     if(bitIsSet(*m_neighbors, nodeID)){
+        // TODO! REMOVE
+        Serial.print(nodeID);
+        Serial.println();
+        Serial.println(*m_neighbors, HEX);
         return getDerivedKeyToNodeB(nodeID, pNodeKey);
     }
 
     // read the key
-    eeprom_read_block(m_key.keyValue, KEYS_START_ADDRESS + ((nodeID - 1)* AES_KEY_SIZE), AES_KEY_SIZE);
+    eeprom_read_block(m_key.keyValue, KEYS_START_ADDRESS + ((nodeID - 1) * AES_KEY_SIZE), AES_KEY_SIZE);
     // set the counter
     m_key.counter = m_counters + nodeID;
     // set pointer
@@ -176,7 +180,7 @@ uint8_t KeyDistrib::deriveKeyToNode(uint8_t nodeID, uint8_t *random_input, uint8
     }
 
     // if(hash->hash(random_input, random_input_size, hash_buff, AES_HASH_SIZE) != true) // TODO SUCCES instead of true in AEShash class
-    if(mac->computeMAC(original_key, AES_KEY_SIZE, random_input, random_input_size, mac_buff, AES_MAC_SIZE) != true) // TODO SUCCES instead of true in AEShash class
+    if(mac->computeMAC(original_key, AES_KEY_SIZE, random_input, random_input_size, original_key, AES_MAC_SIZE) != true) // TODO SUCCES instead of true in AEShash class
 
     // for(int i=0;i<AES_KEY_SIZE;i++){
     //     original_key[i] ^= mac_buff[i];
