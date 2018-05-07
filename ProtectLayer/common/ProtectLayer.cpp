@@ -458,7 +458,7 @@ uint8_t ProtectLayer::receive(uint8_t *buffer, uint8_t buff_size, uint8_t *recei
 
         return FAIL;
         // return FAIL if the session key has not been established and this is not a handshake message
-    } else if(!bitIsSet(m_neighbors, header->sender)){
+    } else if(!(bitIsSet(m_neighbors, header->sender))){
         return FAIL;
     }
 

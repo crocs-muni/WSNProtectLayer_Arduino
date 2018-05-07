@@ -37,6 +37,19 @@ void setup()
     Serial.print(node_id);
     Serial.print("->");
     Serial.println(recipient);
+    
+    protect_layer.discoverNeighbors();
+
+    uint32_t neighbors = protect_layer.getNeighbors();
+
+    Serial.println("Neighbors:");
+    for(int i=0; i < 32; i++){
+        if(bitIsSet(neighbors, i)){
+            Serial.print(i);
+            Serial.print(" ");
+        }
+    }
+    Serial.println();
 
     randomSeed(analogRead(0) * node_id);
 }

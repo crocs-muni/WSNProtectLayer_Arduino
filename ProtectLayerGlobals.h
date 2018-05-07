@@ -99,7 +99,7 @@ typedef struct SPHeader {
 
 // bit operations
 #define setBit(variable, bit) variable |= (1 << bit)
-#define bitIsSet(variable, bit) variable & (1 << bit)
+#define bitIsSet(variable, bit) (variable & (1 << bit))
 
 /**
  * @brief Abstract class representing cipher
