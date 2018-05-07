@@ -39,17 +39,18 @@
 
 class KeyDistrib {
 private:
-	PL_key_t m_key;
-	uint32_t m_counters[MAX_NODE_NUM + 1];
+	PL_key_t m_key;							// key structure holding current key
+	uint32_t m_nodes_list;					// list (eat bit represents a neighbor) of all nodes in the network
+	uint32_t *m_neighbors;					// pointer to list all available neighbors
+	uint32_t m_counters[MAX_NODE_NUM + 1];	// counters for every keys // TODO remove counter for key 0 - does not exist
 public:
-	KeyDistrib(); // TODO! remove
-	// /**
-	// 	Command: Posts taks for key task_discoverKeys for key discovery
-	// 	@return error_t status. SUCCESS or EALREADY if already pending
-	// */
-	// uint8_t discoverKeys();
-	
-	
+
+	/**
+	 * @brief Constructor, initializes attributes
+	 * 
+	 */
+	KeyDistrib(uint32_t *m_neighbors);
+
 	/**
 		Command: Get key to node.
 		@param[in] nodeID node identification of node for which the key should be searched for
@@ -57,6 +58,15 @@ public:
 		@return error_t status.
 	*/	
 	uint8_t getKeyToNodeB(uint8_t nodeID, PL_key_t** pNodeKey);
+
+	/**
+	 * @brief Get key that has been derived during handshake in neighbor discovery
+	 * 
+	 * @param nodeID 	Node's ID
+	 * @param pNodeKey 	Pointer to a pointer to a requested key
+	 * @return uint8_t 	SUCCESS or FAIL
+	 */
+	uint8_t getDerivedKeyToNodeB(uint8_t nodeID, PL_key_t** pNodeKey);
 	
 	/**
 		Command: Get key to base station
@@ -73,7 +83,17 @@ public:
 	*/
 	uint8_t getHashKeyB(PL_key_t** pHashKey);
 
-	uint8_t deleteKey(uint8_t nodeID); // TODO
+	/**
+	 * @brief Overwrite key in EEPROM
+	 * 
+	 * @param nodeID 	Node's ID
+	 * @return uint8_t 	SUCCESS or FAIL
+	 */
+	uint8_t deleteKey(uint8_t nodeID);
+
+	uint8_t deriveKeyToNode(uint8_t nodeID, uint8_t *random_input, uint8_t random_input_size, MAC *mac);
+	
+	uint32_t getNodesList();
 };
 
 #else // __linux__
@@ -120,9 +140,7 @@ public:
 	 * @param pBSKey 	Whatever
 	 * @return uint8_t 	FAIL
 	 */
-	uint8_t getKeyToBSB(PL_key_t** pBSKey);	
-	
-	
+	uint8_t getKeyToBSB(PL_key_t** pBSKey);
 };
 
 #endif // __linux__

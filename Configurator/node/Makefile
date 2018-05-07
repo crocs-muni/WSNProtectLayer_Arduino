@@ -47,7 +47,7 @@ CXXFLAGS_STD      = -ansi
 
 ### CPPFLAGS
 ### Flags you might want to set for debugging purpose. Comment to stop.
-CXXFLAGS         = -pedantic -Wall -Wextra -I../
+CXXFLAGS         = -pedantic -Wall -Wextra -I../ -I../../
 
 ### If avr-gcc -v is higher than 4.9, activate coloring of the output
 ifeq "$(AVR_GCC_VERSION)" "1"

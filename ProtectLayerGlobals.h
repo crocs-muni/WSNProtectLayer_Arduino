@@ -17,13 +17,15 @@
 
 #define MAX_MSG_SIZE            66      // maximum message length for RF12 radio
 
+// CTP-related constants
 #define CTP_DURATION_MS         10000   // CTP establishement duration
 #define CTP_REBROADCASTS_NUM    5       // number of distance rebroadcasts from BS
 #define CTP_REBROADCASTS_DELAY  500     // delay between rebroadcasts
 
+// neighbor-discovery-related constants
 #define DISC_REBROADCASRS_NUM   3       // number of neighbor discovery announcements from node
 #define DISC_REBROADCASTS_DELAY 300     // delay between n.d. announcements
-#define DISC_NEIGHBOR_RSP_TIME  50      // time a node waits for a response
+#define DISC_NEIGHBOR_RSP_TIME  200     // time a node waits for a response
 #define DISC_ROUNDS_NUM         4       // number of n.d. rounds
 
 #define UTESLA_KEY_VALID_PERIOD 10000   // time that the uTESLA key is valid
@@ -32,6 +34,7 @@
 
 #define NODE_RECV_TIMEOUT_MS    100     // timeout for receive() ProtectLayer::receuive() method
 
+// ID and distance constants
 #define BS_NODE_ID              1       // base station node ID
 #define MIN_NODE_ID             2       // lowest ID for a regular node
 #define INVALID_DISTANCE        50      // invalid distance indicator
@@ -39,16 +42,24 @@
 // TODO! enum or defines for all return values
 #define FORWARD                 5       // return value for ProtectLayer::receuive() method
 
-#define AES_KEY_SIZE    16              // using 128-bit AES
-#define AES_BLOCK_SIZE  16              // AES block size
-#define AES_HASH_SIZE   16              // size of the AES-based hash
-#define AES_MAC_SIZE    AES_BLOCK_SIZE  // size of the AES-based MAC
+// cipher-related sizes
+#define AES_KEY_SIZE            16              // using 128-bit AES
+#define AES_BLOCK_SIZE          16              // AES block size
+#define AES_HASH_SIZE           16              // size of the AES-based hash
+#define AES_MAC_SIZE            AES_BLOCK_SIZE  // size of the AES-based MAC
+
+// EEPROM addresses
+#define NODES_LIST_ADDRESS      (uint8_t*)0x20  // address of list of all available nodes
+#define UTESLA_KEY_ADDRESS      (uint8_t*)0x30  // address of uTESLA key
+#define KEYS_START_ADDRESS      (uint8_t*)0x40  // address of first pairwise key
+#define DRVD_KEYS_START_ADDRESS (uint8_t*)0x220    // addres sof first derived key
 
 
 
 typedef uint8_t node_id_t;              // node ID
 typedef uint8_t msg_type_t;             // message type
 
+// TODO maybe add index of a current node so it does not need to be reread from EEPROM in case it's still the same
 typedef struct _key {
     uint8_t   keyValue[AES_KEY_SIZE];   // key
     uint32_t  *counter;                 // key counter

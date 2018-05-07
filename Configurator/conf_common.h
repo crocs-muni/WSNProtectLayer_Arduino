@@ -2,16 +2,6 @@
 #define COMMON_H
 
 
-// TODO! use correct size from the rest of the library
-#ifndef KEY_SIZE
-#define KEY_SIZE 16
-#endif
-
-#define NEIGHBORS_ADDRESS       (uint8_t*)0x3C
-#define CONFIG_START_ADDRESS    (uint8_t*)0x40  // TODO rename (KEY_START_ADDRESS?)
-#define UTESLA_KEY_ADDRESS      (uint8_t*)0x1F4
-
-
 #define CFG_TYPE_SIZE   1
 
 #define CFG_ID          0x58

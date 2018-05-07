@@ -10,7 +10,7 @@ echo "$J1" >> $PATH_FILE
 echo "$J2" >> $PATH_FILE
 echo "$J3" >> $PATH_FILE
 echo "$J4" >> $PATH_FILE
-echo "$J5" >> $PATH_FILE
+#echo "$J5" >> $PATH_FILE
 #echo "$J6" >> $PATH_FILE
 
 #echo "/dev/ttyUSB0" >> $PATH_FILE

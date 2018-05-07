@@ -14,7 +14,7 @@
 #include "KeyDistrib.h"
 #include "CTP.h"
 
-// #undef __linux__ // TODO! REMOVE - just for VS Code syntax highlighting
+#undef __linux__ // TODO! REMOVE - just for VS Code syntax highlighting
 
 #ifdef __linux__
 #include <string>
@@ -35,8 +35,8 @@ private:
     AES             m_aes;          // single-block AES encryption
     AEShash         m_hash;         // AES-based hash computation, uses m_aes for encryption
     AESMAC          m_mac;          // AES-based MAC computation, uses m_aes for encryption
-    Crypto          m_crypto;       // provides all crypto operations, uses m_aes, m_hash and m_mac
     KeyDistrib      m_keydistrib;   // provides keys for m_crypto
+    Crypto          m_crypto;       // provides all crypto operations, uses m_aes, m_hash and m_mac
 
 #ifdef ENABLE_CTP
     CTP             m_ctp;          // class providing CTP establishment, required when routing to BS

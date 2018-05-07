@@ -12,6 +12,7 @@
 #include <avr/eeprom.h>
 
 #include "conf_common.h"
+#include "ProtectLayerGlobals.h"
 
 #define BUFFER_SIZE 64
 
@@ -34,24 +35,24 @@ void saveNodeID(uint8_t node_id)
 
 void saveNodeKey(uint8_t *key, uint8_t node_id)
 {
-    eeprom_update_block(key, CONFIG_START_ADDRESS + (node_id * KEY_SIZE), KEY_SIZE);
+    eeprom_update_block(key, KEYS_START_ADDRESS + ((node_id - 1) * AES_KEY_SIZE), AES_KEY_SIZE);
 }
 
 #define saveBSKey(key)saveNodeKey(key, 0)
 
 void saveuTESLAKey(uint8_t *key)
 {
-    eeprom_update_block(key, UTESLA_KEY_ADDRESS, KEY_SIZE);
+    eeprom_update_block(key, UTESLA_KEY_ADDRESS, AES_KEY_SIZE);
 }
 
 void saveNeighbors(uint8_t *neighbors)
 {
-    eeprom_update_block(neighbors, NEIGHBORS_ADDRESS, 4);
+    eeprom_update_block(neighbors, NODES_LIST_ADDRESS, 4);
 }
 
 void readNodeKey(uint8_t *key, uint8_t node_id)
 {
-    eeprom_read_block(key, CONFIG_START_ADDRESS + (node_id * KEY_SIZE), KEY_SIZE);
+    eeprom_read_block(key, KEYS_START_ADDRESS + ((node_id - 1) * AES_KEY_SIZE), AES_KEY_SIZE);
 }
 
 void setup()
@@ -85,14 +86,14 @@ void loop()
             saveNodeID(buffer[1]);
             reply_ok();
         } else if(buffer[0] == CFG_BS_KEY){
-            if(len1 < KEY_SIZE + 1){
+            if(len1 < AES_KEY_SIZE + 1){
                 reply(REPLY_ERR_MSG_SIZE); // TODO maybe different error code
                 return;
             }
             saveBSKey(buffer + 1);
             reply_ok();
         } else if(buffer[0] == CFG_NODE_KEY){
-            if(len1 < KEY_SIZE + 2){
+            if(len1 < AES_KEY_SIZE + 2){
                 reply(REPLY_ERR_MSG_SIZE); // TODO maybe different error code
                 return;
             }
@@ -104,9 +105,9 @@ void loop()
                 return;
             }
             readNodeKey(buffer, buffer[1]);
-            Serial.write(buffer, KEY_SIZE);
+            Serial.write(buffer, AES_KEY_SIZE);
         } else if(buffer[0] == CFG_UTESLA_KEY){
-            if(len1 < KEY_SIZE + 1){
+            if(len1 < AES_KEY_SIZE + 1){
                 reply(REPLY_ERR_MSG_SIZE); // TODO maybe different error code
                 return;
             }
