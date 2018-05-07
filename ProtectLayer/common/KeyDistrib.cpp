@@ -82,6 +82,10 @@ uint8_t KeyDistrib::getKeyToNodeB(uint8_t nodeID, PL_key_t** pNodeKey)
         return FAIL;
     }
 
+    if(bitIsSet(*m_neighbors, nodeID)){
+        return getDerivedKeyToNodeB(nodeID, pNodeKey);
+    }
+
     // read the key
     eeprom_read_block(m_key.keyValue, KEYS_START_ADDRESS + ((nodeID - 1)* AES_KEY_SIZE), AES_KEY_SIZE);
     // set the counter

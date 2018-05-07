@@ -41,6 +41,7 @@
 
 // TODO! enum or defines for all return values
 #define FORWARD                 5       // return value for ProtectLayer::receuive() method
+#define HANDSHAKE               10      // return value for ProtectLayer::receuive() method
 
 // cipher-related sizes
 #define AES_KEY_SIZE            16              // using 128-bit AES

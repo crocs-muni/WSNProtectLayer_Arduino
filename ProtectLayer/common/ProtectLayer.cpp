@@ -406,6 +406,10 @@ uint8_t ProtectLayer::receive(uint8_t *buffer, uint8_t buff_size, uint8_t *recei
             return FAIL;
         }
 
+        if(buff_size < rcvd_len){
+            return FAIL;
+        }
+
         memcpy(buffer, rcvd_buff, rcvd_len);
         *received_size = rcvd_len;
 
@@ -436,6 +440,10 @@ uint8_t ProtectLayer::receive(uint8_t *buffer, uint8_t buff_size, uint8_t *recei
         }
 
         // copy message to buffer - probably not needed but anyway..
+        if(buff_size < rcvd_len){
+            return FAIL;
+        }
+
         memcpy(buffer, rcvd_buff, rcvd_len);
         *received_size = rcvd_len;
 
@@ -443,6 +451,16 @@ uint8_t ProtectLayer::receive(uint8_t *buffer, uint8_t buff_size, uint8_t *recei
         return FORWARD;
     }
 #endif // ENABLE_UTESLA
+    if(header->msgType == MSG_DISC){
+        if(neighborHandshakeResponse(rcvd_buff, rcvd_len) == SUCCESS){
+            return HANDSHAKE;
+        }
+
+        return FAIL;
+        // return FAIL if the session key has not been established and this is not a handshake message
+    } else if(!bitIsSet(m_neighbors, header->sender)){
+        return FAIL;
+    }
 
     // decrypt and verify MAC
     if(header->sender == BS_NODE_ID){
@@ -562,10 +580,6 @@ uint8_t ProtectLayer::neighborHandshake(uint8_t node_id)
                 return FAIL;
             }
 
-            printBuffer(msg_buffer + SPHEADER_SIZE, 4);
-            printBuffer((uint8_t*)&own_nonce, 4);
-            Serial.println();
-
             if(memcmp(msg_buffer + SPHEADER_SIZE, &own_nonce, sizeof(uint32_t))){
                 return FAIL;
             }
@@ -584,20 +598,14 @@ uint8_t ProtectLayer::neighborHandshake(uint8_t node_id)
     return FAIL;
 }
 
-uint8_t ProtectLayer::neighborHandshakeResponse()
+uint8_t ProtectLayer::neighborHandshakeResponse(uint8_t *msg_buffer, uint8_t msg_size)
 {
-    // data must already be in rf12_buff!!!!!
     // check the message size
-    if(rf12_len < SPHEADER_SIZE + 4){
+    if(msg_size < SPHEADER_SIZE + 4){
         return FAIL;
     }
 
     uint8_t random_buffer[AES_KEY_SIZE];
-    uint8_t msg_buffer[MAX_MSG_SIZE];
-    uint8_t msg_size = rf12_len;
-
-    memcpy(msg_buffer, rf12_data, rf12_len);
-    rf12_recvDone();
 
     // check the header
     volatile SPHeader_t *spheader = reinterpret_cast<volatile SPHeader_t*>(msg_buffer);
@@ -706,11 +714,10 @@ uint8_t ProtectLayer::discoverNeighbors()
                 }
             }
 
-            // try to receive handshake messages and respond
-            uint32_t start = millis();
-            while(waitReceive(start + 100)){
-                neighborHandshakeResponse();
-            }
+            // receive() automatically responds to handshake request
+            uint8_t foo;
+            // passing 0 buffer size in case other message arrives
+            receive(&foo, 0, &foo, 100);
 
             i = (i + 1) % (MAX_NODE_NUM + 1);
         }

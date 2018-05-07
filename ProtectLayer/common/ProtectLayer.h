@@ -14,7 +14,7 @@
 #include "KeyDistrib.h"
 #include "CTP.h"
 
-#undef __linux__ // TODO! REMOVE - just for VS Code syntax highlighting
+// #undef __linux__ // TODO! REMOVE - just for VS Code syntax highlighting
 
 #ifdef __linux__
 #include <string>
@@ -74,7 +74,7 @@ private:
      * 
      * @return uint8_t SUCCESS or FAIL
      */
-    uint8_t neighborHandshakeResponse();
+    uint8_t neighborHandshakeResponse(uint8_t *msg_buffer, uint8_t msg_size);
 #ifdef ENABLE_UTESLA
     uTeslaClient    m_utesla;       // uTESLA class for ordinary node (not a BS)
 #endif
