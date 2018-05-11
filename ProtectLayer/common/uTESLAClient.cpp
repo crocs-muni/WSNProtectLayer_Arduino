@@ -58,6 +58,11 @@ uint8_t uTeslaClient::updateKey(const uint8_t* new_key)
 	for(int i=0;i<MAX_NUM_MISSED_ROUNDS;i++){
 		m_hash->hash(hash_prev, m_hash_size, hash_next, m_hash_size);
 		if(!memcmp(m_current_key, hash_next, m_hash_size)){
+            // return fail if the key arrived after expected time of key arrival
+            if((i+1) * UTESLA_KEY_VALID_PERIOD < millis() - m_last_key_update){
+                return FAIL;
+            }
+
             m_round += i + 1;
             memcpy(m_current_key, new_key, m_hash_size);
             m_last_key_update = millis();
