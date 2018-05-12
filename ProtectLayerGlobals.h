@@ -98,8 +98,8 @@ typedef struct SPHeader {
 #define SPHEADER_SIZE    sizeof(SPHeader_t) // size of the message header
 
 // bit operations
-#define setBit(variable, bit) variable |= (1 << bit)
-#define bitIsSet(variable, bit) (variable & (1 << bit))
+#define setBit(variable, bit) variable |= ((uint32_t) 1 << bit)
+#define bitIsSet(variable, bit) (variable & ((uint32_t) 1 << bit))
 
 /**
  * @brief Abstract class representing cipher
