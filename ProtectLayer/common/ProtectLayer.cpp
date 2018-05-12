@@ -721,7 +721,7 @@ uint8_t ProtectLayer::discoverNeighbors()
             // receive() automatically responds to handshake request
             uint8_t foo;
             // passing 0 buffer size in case other message arrives
-            receive(&foo, 0, &foo, 150);
+            receive(&foo, 0, &foo, random(1200));
 
             i = (i + 1) % (MAX_NODE_NUM + 1);
         }
