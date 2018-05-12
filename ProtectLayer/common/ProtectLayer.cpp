@@ -585,8 +585,6 @@ uint8_t ProtectLayer::neighborHandshake(uint8_t node_id)
             }
 
             if(m_keydistrib.deriveKeyToNode(node_id, random_buffer, 4 * sizeof(uint32_t), &m_mac) != SUCCESS){
-                Serial.print("fts");
-                Serial.println(node_id);
                 return FAIL;
             }
 

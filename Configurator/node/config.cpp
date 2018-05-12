@@ -38,7 +38,7 @@ void saveNodeKey(uint8_t *key, uint8_t node_id)
     eeprom_update_block(key, KEYS_START_ADDRESS + ((node_id - 1) * AES_KEY_SIZE), AES_KEY_SIZE);
 }
 
-#define saveBSKey(key)saveNodeKey(key, 0)
+#define saveBSKey(key)saveNodeKey(key, 1)
 
 void saveuTESLAKey(uint8_t *key)
 {
