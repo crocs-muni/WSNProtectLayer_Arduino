@@ -26,7 +26,7 @@
 
 // EEPROM settings
 #define NODE_ID_LOCATION    0           // node ID EEPROM address
-#define MAX_NODE_NUM        30          // maximum number of nodes
+#define MAX_NODE_NUM        29          // maximum number of nodes
 
 // createHeader() modes
 #define MODE_SRC            0           // include source address

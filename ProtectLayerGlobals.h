@@ -50,10 +50,10 @@
 #define AES_MAC_SIZE            AES_BLOCK_SIZE  // size of the AES-based MAC
 
 // EEPROM addresses
-#define NODES_LIST_ADDRESS      (uint8_t*)0x20  // address of list of all available nodes
-#define UTESLA_KEY_ADDRESS      (uint8_t*)0x30  // address of uTESLA key
-#define KEYS_START_ADDRESS      (uint8_t*)0x40  // address of first pairwise key
-#define DRVD_KEYS_START_ADDRESS (uint8_t*)0x220    // addres sof first derived key
+#define NODES_LIST_ADDRESS      (uint8_t*)0x30  // address of list of all available nodes
+#define UTESLA_KEY_ADDRESS      (uint8_t*)0x40  // address of uTESLA key
+#define KEYS_START_ADDRESS      (uint8_t*)0x50  // address of first pairwise key
+#define DRVD_KEYS_START_ADDRESS (uint8_t*)0x230    // addres sof first derived key
 
 
 

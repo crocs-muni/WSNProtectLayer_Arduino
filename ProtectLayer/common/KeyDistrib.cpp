@@ -74,7 +74,7 @@ KeyDistrib::KeyDistrib(uint32_t *neighbors): m_neighbors(neighbors)
 
 uint8_t KeyDistrib::getKeyToNodeB(uint8_t nodeID, PL_key_t** pNodeKey)
 {
-    if(nodeID < 2){
+    if(nodeID < 2 || nodeID > 29){
         return FAIL;
     }
     // check if key is configured
@@ -98,7 +98,7 @@ uint8_t KeyDistrib::getKeyToNodeB(uint8_t nodeID, PL_key_t** pNodeKey)
 
 uint8_t KeyDistrib::getDerivedKeyToNodeB(uint8_t nodeID, PL_key_t** pNodeKey)
 {
-    if(nodeID < 2){
+    if(nodeID < 2 || nodeID > 29){
         return FAIL;
     }
 
@@ -138,7 +138,7 @@ uint8_t KeyDistrib::getHashKeyB(PL_key_t** pHashKey)
 
 uint8_t KeyDistrib::deleteKey(uint8_t nodeID)
 {
-    if(nodeID < 2){
+    if(nodeID < 2 || nodeID > 29){
         return FAIL;
     }
 
@@ -161,7 +161,11 @@ uint8_t KeyDistrib::deleteKey(uint8_t nodeID)
 }
 
 uint8_t KeyDistrib::deriveKeyToNode(uint8_t nodeID, uint8_t *random_input, uint8_t random_input_size, MAC *mac)
-{
+{    
+    if(nodeID < 2 || nodeID > 29){
+        return FAIL;
+    }
+
     uint8_t mac_buff[AES_MAC_SIZE];
     uint8_t original_key[AES_KEY_SIZE];
 
