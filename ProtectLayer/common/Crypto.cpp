@@ -330,7 +330,7 @@ uint8_t Crypto::unprotectBufferB(PL_key_t* key, uint8_t* buffer, uint8_t offset,
     if(*pLen < m_mac->macSize()){
         return FAIL;
     }
-    
+
     //offset is used for encryption shift, to verify SPheader, but not to encrypt it
     // if((status = decryptBufferB(key, buffer, offset, *pLen) != SUCCESS){
     if((status = decryptBufferB(key, buffer, offset, *pLen - m_mac->macSize())) != SUCCESS){

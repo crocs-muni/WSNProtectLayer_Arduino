@@ -52,7 +52,7 @@ void loop()
     uint8_t rcvd_len = 0;
     uint8_t rval;
     while(millis() - start < (uint32_t) random(20) * 1000){
-        if((rval = protect_layer.receive(msg_buffer, BUFFER_SIZE, &rcvd_len, 300)) == SUCCESS){
+        if((rval = protect_layer.receive(msg_buffer, BUFFER_SIZE, &rcvd_len, protect_layer.getNodeID() * random(100))) == SUCCESS){
             Serial.print(node_id);
             Serial.println(" rcvd:");
             printBuffer(msg_buffer, rcvd_len);
@@ -67,7 +67,7 @@ void loop()
     }
 
     if(!random(7)){
-        Serial.print("snd: ");
+        // Serial.print("snd: ");
         // Serial.println(node_id);
         memset(msg_buffer, node_id , BUFFER_SIZE);
         // msg_buffer[0] = node_id;

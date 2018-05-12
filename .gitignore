@@ -12,3 +12,5 @@ Configurator/host/config_host
 ProtectLayer/demo_CTP/BS_host/BS_CTPdemo
 
 ProtectLayer/demo_uTESLA/BS_host/BS_uTESLAdemo
+
+Configurator/host/generated\.key

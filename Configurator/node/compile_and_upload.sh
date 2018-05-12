@@ -15,7 +15,7 @@ echo "$J5" >> $PATH_FILE
 echo "$J6" >> $PATH_FILE
 echo "$J7" >> $PATH_FILE
 
-java -cp $JAR $CLASS -a $PATH_FILE -u $PROJECT
+java -cp $JAR $CLASS -a $PATH_FILE -u $PROJECT -t
 
 rm $PATH_FILE
 
