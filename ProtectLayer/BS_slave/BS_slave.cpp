@@ -78,6 +78,7 @@ void loop()
         copy_rf12_to_buffer();
 
         // send to host
+        Serial.write(rcvd_len);
         Serial.write(rcvd_buff, rcvd_len);
         Serial.flush();
     }

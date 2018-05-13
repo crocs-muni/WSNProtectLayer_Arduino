@@ -131,11 +131,29 @@ uint8_t ProtectLayer::receive(uint8_t *buffer, uint8_t buff_size, uint8_t *recei
     uint8_t rcvd_len = 0;
     uint8_t rcvd_buff[MAX_MSG_SIZE + 10];
 
+    // // get new message from the slave
+    // if((rcvd_len = read(m_slave_fd, (void*) rcvd_buff, MAX_MSG_SIZE)) < SPHEADER_SIZE + m_mac.macSize() + 1){
+    //     // return FAIL if there is none
+    //     return FAIL;
+    // }
+
     // get new message from the slave
-    if((rcvd_len = read(m_slave_fd, (void*) rcvd_buff, MAX_MSG_SIZE)) < SPHEADER_SIZE + m_mac.macSize()){
-        // return FAIL if there is none
+    if((rcvd_len = read(m_slave_fd, (void*) rcvd_buff, MAX_MSG_SIZE)) > 0{
+        m_rcvd_queue.insert(m_rcvd_queue.end(), rcvd_buff, rcvd_buff + rcvd_len);
+    }
+
+    if(m_rcvd_queue.size() < SPHEADER_SIZE + m_mac.macSize() + 1){
         return FAIL;
     }
+
+    if(m_rcvd_queue.size() < m_rcvd_queue.front()){
+        return FAIL;
+    }
+
+    rcvd_len = m_rcvd_queue.front();
+    m_rcvd_queue.pop_front();
+    std::copy(m_rcvd_queue.begin(), m_rcvd_queue.begin() + rcvd_len, rcvd_buff);
+    m_rcvd_queue.erase(m_rcvd_queue.begin(), m_rcvd_queue.begin() + rcvd_len);
 
     // discard message if it does not fit into buffer
     if(rcvd_len > MAX_MSG_SIZE){    // cannot happen

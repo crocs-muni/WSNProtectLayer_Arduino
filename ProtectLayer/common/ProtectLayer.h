@@ -18,9 +18,13 @@
 
 #ifdef __linux__
 #include <string>
+#include <deque>
 
 #include "uTESLAMaster.h"
 #include "configurator.h"
+
+#define RCVD_BUFFER_SIZE    1024
+
 #else 
 #include "uTESLAClient.h"
 #endif
@@ -48,6 +52,7 @@ private:
 #ifdef __linux__
     uTeslaMaster    *m_utesla;      // uTESLA class for BS
     int             m_slave_fd;     // file descriptor of slave JeeLink device
+    std::deque<uint8_t> m_rcvd_queue;
 #else
     uint8_t         m_node_id;      // this node's ID
     uint32_t        m_neighbors;    // active neighors, available only after neighbor discovery
