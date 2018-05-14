@@ -24,6 +24,8 @@ uTeslaClient::uTeslaClient(uint8_t *eeprom_address, Hash *hash, MAC *mac): m_has
 	m_hash_size = hash->hashSize();
 	m_mac_key_size = mac->keySize();
     m_mac_size = mac->macSize();
+
+    memset(m_working_buffer, 0, WORKING_BUFF_SIZE);
 }
 
 uTeslaClient::~uTeslaClient()

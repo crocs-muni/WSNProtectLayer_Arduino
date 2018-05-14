@@ -56,6 +56,9 @@ private:
 #else
     uint8_t         m_node_id;      // this node's ID
     uint32_t        m_neighbors;    // active neighors, available only after neighbor discovery
+#ifdef ENABLE_UTESLA
+    uTeslaClient    m_utesla;       // uTESLA class for ordinary node (not a BS)
+#endif
 
     /**
      * @brief Forward uTESLA messages
@@ -80,9 +83,6 @@ private:
      * @return uint8_t SUCCESS or FAIL
      */
     uint8_t neighborHandshakeResponse(uint8_t *msg_buffer, uint8_t msg_size);
-#ifdef ENABLE_UTESLA
-    uTeslaClient    m_utesla;       // uTESLA class for ordinary node (not a BS)
-#endif
 #endif
 
 public:

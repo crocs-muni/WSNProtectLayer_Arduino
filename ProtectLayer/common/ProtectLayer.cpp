@@ -24,6 +24,8 @@ int openSerialPort(std::string path);   // TODO move from configurator to separa
 ProtectLayer::ProtectLayer(std::string &slave_path, std::string &key_file):
 m_hash(&m_aes), m_mac(&m_aes), m_keydistrib(key_file), m_crypto(&m_aes, &m_mac, &m_hash, &m_keydistrib)
 { 
+    memset(m_received, 0, 2 * sizeof(uint8_t));
+
     // open file descriptor for serial port
     m_slave_fd = openSerialPort(slave_path);
     if(m_slave_fd < 0){
@@ -138,7 +140,7 @@ uint8_t ProtectLayer::receive(uint8_t *buffer, uint8_t buff_size, uint8_t *recei
     // }
 
     // get new message from the slave
-    if((rcvd_len = read(m_slave_fd, (void*) rcvd_buff, MAX_MSG_SIZE)) > 0{
+    if((rcvd_len = read(m_slave_fd, (void*) rcvd_buff, MAX_MSG_SIZE)) > 0){
         m_rcvd_queue.insert(m_rcvd_queue.end(), rcvd_buff, rcvd_buff + rcvd_len);
     }
 
@@ -204,7 +206,7 @@ m_hash(&m_aes), m_mac(&m_aes), m_keydistrib(&m_neighbors), m_crypto(&m_aes, &m_m
 #else
 // do not initialize uTESLA
 ProtectLayer::ProtectLayer():
-m_hash(&m_aes), m_mac(&m_aes), m_keydistrib(&m_neighbors), m_crypto(&m_aes, &m_mac, &m_hash, &m_keydistrib)
+m_hash(&m_aes), m_mac(&m_aes), m_keydistrib(&m_neighbors), m_crypto(&m_aes, &m_mac, &m_hash, &m_keydistrib), m_neighbors(0)
 #endif
 {
     // initialize serial communication
