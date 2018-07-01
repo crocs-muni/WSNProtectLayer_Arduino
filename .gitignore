@@ -1,16 +1,32 @@
+# Prerequisites
+*.d
 
-\.vscode/
-
+# Compiled Object files
+*.slo
+*.lo
 *.o
+*.obj
 
+# Precompiled Headers
+*.gch
+*.pch
+
+# Compiled Dynamic libraries
+*.so
+*.dylib
+*.dll
+
+# Fortran module files
+*.mod
+*.smod
+
+# Compiled Static libraries
+*.lai
+*.la
 *.a
+*.lib
 
-ProtectLayer/common/AES/aes\.code-workspace
-
-Configurator/host/config_host
-
-ProtectLayer/demo_CTP/BS_host/BS_CTPdemo
-
-ProtectLayer/demo_uTESLA/BS_host/BS_uTESLAdemo
-
-Configurator/host/generated\.key
+# Executables
+*.exe
+*.out
+*.app
