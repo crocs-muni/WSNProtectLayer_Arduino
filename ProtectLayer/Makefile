@@ -4,7 +4,10 @@ else
 MAKE=make
 endif
 
-all:
+CONFIGURATOR_PATH=../Configurator
+CONFIGURATOR_LIB=$(CONFIGURATOR_PATH)/libconfigurator.a
+
+all: $(CONFIGURATOR_LIB)
 	$(MAKE) -C common
 	make DEBUG= -C BS_slave
 	make DEBUG= -C demo
@@ -15,3 +18,6 @@ clean:
 	make -C BS_slave clean
 	make -C demo clean
 	make -C demo_CTP clean
+
+$(CONFIGURATOR_LIB):
+	$(MAKE) -C $(CONFIGURATOR_PATH)
